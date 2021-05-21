@@ -22,41 +22,41 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = newToken(token.T_OP_EQUAL, l.ch)
+		tok = newToken(token.EQUAL, l.ch)
 	case '<':
 		switch l.peekChar() {
 		case '=':
 			l.readChar() // advance
-			tok = newTokenStr(token.T_OP_LT_EQ, "<=")
+			tok = newTokenStr(token.LTEQ, "<=")
 		case '>':
 			l.readChar() // advance
-			tok = newTokenStr(token.T_OP_NOT_EQ, "<>")
+			tok = newTokenStr(token.NOTEQ, "<>")
 		default:
-			tok = newToken(token.T_OP_LT, l.ch)
+			tok = newToken(token.LT, l.ch)
 		}
 	case '>':
 		if l.peekChar() == '=' {
 			l.readChar() // advance
-			tok = newTokenStr(token.T_OP_GT_EQ, ">=")
+			tok = newTokenStr(token.GTEQ, ">=")
 		} else {
-			tok = newToken(token.T_OP_GT, l.ch)
+			tok = newToken(token.GT, l.ch)
 		}
 	case ',':
-		tok = newToken(token.T_COMMA, l.ch)
+		tok = newToken(token.COMMA, l.ch)
 	case '[':
-		tok = newToken(token.T_LBRACKET, l.ch)
+		tok = newToken(token.LBRACKET, l.ch)
 	case ']':
-		tok = newToken(token.T_RBRACKET, l.ch)
+		tok = newToken(token.RBRACKET, l.ch)
 	case '(':
-		tok = newToken(token.T_LPAREN, l.ch)
+		tok = newToken(token.LPAREN, l.ch)
 	case ')':
-		tok = newToken(token.T_RPAREN, l.ch)
+		tok = newToken(token.RPAREN, l.ch)
 	case ';':
-		tok = newToken(token.T_SEMI_COLON, l.ch)
+		tok = newToken(token.SEMICOLON, l.ch)
 	case '"':
-		tok = newTokenStr(token.T_STRING, l.readString())
+		tok = newTokenStr(token.STRING, l.readString())
 	case '\'':
-		tok = newTokenStr(token.T_IDENT, l.readQuotedIdentifier())
+		tok = newTokenStr(token.IDENT, l.readQuotedIdentifier())
 	case 0:
 		tok = newTokenStr(token.EOF, "")
 	default:
@@ -67,7 +67,7 @@ func (l *Lexer) NextToken() token.Token {
 		} else if isDigit(l.ch) {
 			// TODO: Add support for float point type
 			// TODO: Add support for units
-			return newTokenStr(token.T_INT, l.readNumber())
+			return newTokenStr(token.INT, l.readNumber())
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
 		}

@@ -20,15 +20,15 @@ const (
 )
 
 var precendences = map[token.TokenType]int{
-	token.T_OP_EQUAL:  EQUALS,
-	token.T_OP_NOT_EQ: EQUALS,
-	token.T_OP_LT:     LESSGREATER,
-	token.T_OP_LT_EQ:  LESSGREATER,
-	token.T_OP_GT:     LESSGREATER,
-	token.T_OP_GT_EQ:  LESSGREATER,
-	token.T_KW_AND:    BOOLEAN,
-	token.T_KW_NOT:    BOOLEAN,
-	token.T_KW_OR:     BOOLEAN,
+	token.EQUAL: EQUALS,
+	token.NOTEQ: EQUALS,
+	token.LT:    LESSGREATER,
+	token.LTEQ:  LESSGREATER,
+	token.GT:    LESSGREATER,
+	token.GTEQ:  LESSGREATER,
+	token.AND:   BOOLEAN,
+	token.NOT:   BOOLEAN,
+	token.OR:    BOOLEAN,
 }
 
 type (
@@ -49,10 +49,10 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
-	p.registerPrefix(token.T_INT, p.parseIntegerLiteral)
-	p.registerPrefix(token.T_FLOAT, p.parseFloatLiteral)
-	p.registerPrefix(token.T_STRING, p.parseStringLiteral)
-	p.registerPrefix(token.T_LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.FLOAT, p.parseFloatLiteral)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 
 	// Read two tokens so that currentToken and peekToken are both set
 	p.nextToken()
@@ -101,7 +101,7 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 	exp := p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.T_RPAREN) {
+	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
 
@@ -117,7 +117,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 	leftExp := prefixFn()
 
-	for !p.peekTokenIs(token.T_SEMI_COLON) && precedence < p.peekPrecedence() {
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infixFn := p.infixParseFns[p.peekToken.Type]
 		if infixFn == nil {
 			return leftExp
@@ -155,7 +155,7 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.T_KW_SELECT:
+	case token.SELECT:
 		return p.parseSelectStatement()
 	default:
 		// error here for now
@@ -168,7 +168,7 @@ func (p *Parser) parseSelectStatement() ast.Statement {
 	statement := &ast.SelectStatement{Token: p.curToken, SelectionStatements: []ast.Statement{}}
 	p.nextToken()
 	statement.SelectionStatements = p.parseSelectionStatements()
-	if !p.expectPeek(token.T_KW_WHERE) {
+	if !p.expectPeek(token.WHERE) {
 		return statement
 	}
 	return nil
