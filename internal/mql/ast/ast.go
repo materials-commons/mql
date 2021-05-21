@@ -27,8 +27,13 @@ type SelectStatement struct {
 	WhereStatement      WhereStatement
 }
 
-func (s *SelectStatement) statementNode()       {}
-func (s *SelectStatement) TokenLiteral() string { return s.Token.Literal }
+func (s *SelectStatement) statementNode() {
+}
+
+func (s *SelectStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
 func (s *SelectStatement) String() string {
 	return ""
 }
@@ -36,4 +41,50 @@ func (s *SelectStatement) String() string {
 type WhereStatement struct {
 	Token    token.Token
 	Criteria []Statement
+}
+
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (l *IntegerLiteral) expressionNode() {
+}
+
+func (l *IntegerLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+func (l *IntegerLiteral) String() string {
+	return l.Token.Literal
+}
+
+type FloatLiteral struct {
+	Token token.Token
+	Value float64
+}
+
+func (l *FloatLiteral) expressionNode() {
+}
+
+func (l *FloatLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+func (l *FloatLiteral) String() string {
+	return l.Token.Literal
+}
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (l *StringLiteral) expressionNode() {
+}
+
+func (l *StringLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *StringLiteral) String() string {
+	return l.Token.Literal
 }

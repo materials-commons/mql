@@ -3,26 +3,131 @@ package parser
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/materials-commons/mql/internal/mql/ast"
 	"github.com/materials-commons/mql/internal/mql/lexer"
 	"github.com/materials-commons/mql/internal/mql/token"
 )
 
+// Precendence from lowest to highest
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // =
+	LESSGREATER // > or < or <= or >=
+	BOOLEAN
+)
+
+var precendences = map[token.TokenType]int{
+	token.T_OP_EQUAL:  EQUALS,
+	token.T_OP_NOT_EQ: EQUALS,
+	token.T_OP_LT:     LESSGREATER,
+	token.T_OP_LT_EQ:  LESSGREATER,
+	token.T_OP_GT:     LESSGREATER,
+	token.T_OP_GT_EQ:  LESSGREATER,
+	token.T_KW_AND:    BOOLEAN,
+	token.T_KW_NOT:    BOOLEAN,
+	token.T_KW_OR:     BOOLEAN,
+}
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
-	l         *lexer.Lexer
-	errors    []string
-	curToken  token.Token
-	peekToken token.Token
+	l              *lexer.Lexer
+	errors         []string
+	curToken       token.Token
+	peekToken      token.Token
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
+
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.T_INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.T_FLOAT, p.parseFloatLiteral)
+	p.registerPrefix(token.T_STRING, p.parseStringLiteral)
+	p.registerPrefix(token.T_LPAREN, p.parseGroupedExpression)
+
 	// Read two tokens so that currentToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) appendError(msg string, args ...interface{}) {
+	fmt.Sprintf(msg, args...)
+	p.errors = append(p.errors, msg)
+}
+
+func (p *Parser) registerPrefix(t token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[t] = fn
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	var err error
+	literal := &ast.IntegerLiteral{Token: p.curToken}
+	if literal.Value, err = strconv.ParseInt(p.curToken.Literal, 0, 64); err != nil {
+		p.appendError("could not parse %q as integer", p.curToken.Literal)
+		return nil
+	}
+
+	return literal
+}
+
+func (p *Parser) parseFloatLiteral() ast.Expression {
+	var err error
+	literal := &ast.FloatLiteral{Token: p.curToken}
+	if literal.Value, err = strconv.ParseFloat(p.curToken.Literal, 64); err != nil {
+		p.appendError("could not parse %q as float", p.curToken.Literal)
+		return nil
+	}
+
+	return literal
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.T_RPAREN) {
+		return nil
+	}
+
+	return exp
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefixFn := p.prefixParseFns[p.curToken.Type]
+	if prefixFn == nil {
+		p.appendError("no prefix parse function for %s found", token.TokenToStr(p.curToken.Type))
+		return nil
+	}
+
+	leftExp := prefixFn()
+
+	for !p.peekTokenIs(token.T_SEMI_COLON) && precedence < p.peekPrecedence() {
+		infixFn := p.infixParseFns[p.peekToken.Type]
+		if infixFn == nil {
+			return leftExp
+		}
+
+		p.nextToken()
+		leftExp = infixFn(leftExp)
+	}
+
+	return leftExp
 }
 
 func (p *Parser) nextToken() {
@@ -84,6 +189,22 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
+}
+
+func (p *Parser) peekPrecedence() int {
+	return p.getPrecedence(p.peekToken.Type)
+}
+
+func (p *Parser) curPrecedence() int {
+	return p.getPrecedence(p.curToken.Type)
+}
+
+func (p *Parser) getPrecedence(t token.TokenType) int {
+	if p, ok := precendences[t]; ok {
+		return p
+	}
+
+	return LOWEST
 }
 
 func (p *Parser) peekError(t token.TokenType) {
