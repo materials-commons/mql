@@ -1,6 +1,10 @@
 package ast
 
-import "github.com/materials-commons/mql/internal/mql/token"
+import (
+	"bytes"
+
+	"github.com/materials-commons/mql/internal/mql/token"
+)
 
 type Node interface {
 	TokenLiteral() string
@@ -21,6 +25,24 @@ type MQL struct {
 	Statements []Statement
 }
 
+func (m *MQL) TokenLiteral() string {
+	if len(m.Statements) > 0 {
+		return m.Statements[0].TokenLiteral()
+	}
+
+	return ""
+}
+
+func (m *MQL) String() string {
+	var out bytes.Buffer
+
+	for _, s := range m.Statements {
+		out.WriteString(s.String())
+	}
+
+	return out.String()
+}
+
 type SelectStatement struct {
 	Token               token.Token
 	SelectionStatements []Statement
@@ -35,12 +57,37 @@ func (s *SelectStatement) TokenLiteral() string {
 }
 
 func (s *SelectStatement) String() string {
-	return ""
+	var out bytes.Buffer
+
+	for _, st := range s.SelectionStatements {
+		out.WriteString(st.String())
+	}
+
+	out.WriteString(s.WhereStatement.String())
+
+	return out.String()
 }
 
 type WhereStatement struct {
-	Token    token.Token
-	Criteria []Statement
+	Token      token.Token
+	Statements []Statement
+}
+
+func (s *WhereStatement) statementNode() {
+}
+
+func (s *WhereStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *WhereStatement) String() string {
+	var out bytes.Buffer
+
+	for _, st := range s.Statements {
+		out.WriteString(st.String())
+	}
+
+	return out.String()
 }
 
 type IntegerLiteral struct {
