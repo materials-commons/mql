@@ -21,6 +21,8 @@ type Expression interface {
 	expressionNode()
 }
 
+/////////////////////////////////////////
+
 type MQL struct {
 	Statements []Statement
 }
@@ -42,6 +44,8 @@ func (m *MQL) String() string {
 
 	return out.String()
 }
+
+/////////////////////////////////////////
 
 type SelectStatement struct {
 	Token               token.Token
@@ -68,6 +72,8 @@ func (s *SelectStatement) String() string {
 	return out.String()
 }
 
+/////////////////////////////////////////
+
 type WhereStatement struct {
 	Token      token.Token
 	Statements []Statement
@@ -90,6 +96,8 @@ func (s *WhereStatement) String() string {
 	return out.String()
 }
 
+/////////////////////////////////////////
+
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64
@@ -104,6 +112,8 @@ func (l *IntegerLiteral) TokenLiteral() string {
 func (l *IntegerLiteral) String() string {
 	return l.Token.Literal
 }
+
+/////////////////////////////////////////
 
 type FloatLiteral struct {
 	Token token.Token
@@ -120,6 +130,8 @@ func (l *FloatLiteral) String() string {
 	return l.Token.Literal
 }
 
+/////////////////////////////////////////
+
 type StringLiteral struct {
 	Token token.Token
 	Value string
@@ -134,4 +146,78 @@ func (l *StringLiteral) TokenLiteral() string {
 
 func (l *StringLiteral) String() string {
 	return l.Token.Literal
+}
+
+/////////////////////////////////////////
+
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (e *PrefixExpression) expressionNode() {
+}
+
+func (e *PrefixExpression) TokenLiteral() string {
+	return e.Token.Literal
+
+}
+
+func (e *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(e.Operator)
+	out.WriteString(e.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+/////////////////////////////////////////
+
+type InfixExpression struct {
+	Token    token.Token
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+func (e *InfixExpression) expressionNode() {
+}
+
+func (e *InfixExpression) TokenLiteral() string {
+	return e.Token.Literal
+
+}
+
+func (e *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(e.Left.String())
+	out.WriteString(" " + e.Operator + " ")
+	out.WriteString(e.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+/////////////////////////////////////////
+
+type ExecuteStatement struct {
+	Token token.Token
+}
+
+func (s *ExecuteStatement) statementNode() {
+
+}
+
+func (s *ExecuteStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *ExecuteStatement) String() string {
+	return ";"
 }

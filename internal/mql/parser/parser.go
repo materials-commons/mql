@@ -145,7 +145,6 @@ func (p *Parser) ParseMQL() *ast.MQL {
 		}
 		p.nextToken()
 	}
-
 	return mql
 }
 
@@ -157,6 +156,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.SELECT:
 		return p.parseSelectStatement()
+	//case token.SEMICOLON:
+	//	return
 	default:
 		// error here for now
 		log.Fatalf("Top level statement can only be a select")
