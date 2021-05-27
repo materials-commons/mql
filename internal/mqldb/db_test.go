@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/materials-commons/gomcdb/mcmodel"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func createTestDB() *DB {
@@ -221,5 +223,18 @@ func TestComplexAndOrStatement(t *testing.T) {
 		t.Fatalf(`Expected 3 matches on: 
 (process name = 'Texture' and process attribute 'note' = 'ignore these results') or
 (process attribute 'Beam Type' = 'Wide' or process attribute 'frames per second' = 3), but got %d`, len(matching))
+	}
+}
+
+func TestLoadingFromSQLDB(t *testing.T) {
+	dsn := "mc:mcpw@tcp(127.0.0.1:3306)/mc?charset=utf8mb4&parseTime=True&loc=Local"
+	mysqldb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Errorf("Failed to open db: %s", err)
+	}
+
+	db := NewDB(77, mysqldb)
+	if err := db.Load(); err != nil {
+		t.Fatalf("Failed loading database: %s", err)
 	}
 }
