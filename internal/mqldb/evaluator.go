@@ -50,7 +50,85 @@ type MatchStatement struct {
 func (s MatchStatement) statementNode() {
 }
 
-func EvalStatement(db *DB, statement Statement) []mcmodel.Activity {
+func EvalStatement(db *DB, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
+	var matchingProcesses []mcmodel.Activity
+	if hasProcessMatchStatement(statement) {
+		matchingProcesses = evalMatchingProcesses(db, statement)
+	}
+
+	var matchingSamples []mcmodel.Entity
+	if hasSampleMatchStatement(statement) {
+		matchingSamples = evalMatchingSamples(db, statement)
+	}
+
+	return matchingProcesses, matchingSamples
+}
+
+func hasProcessMatchStatement(statement Statement) bool {
+	switch s := statement.(type) {
+	case MatchStatement:
+		switch s.FieldType {
+		case ProcessFieldType:
+			return true
+		case ProcessAttributeFieldType:
+			return true
+		default:
+			return false
+		}
+	case AndStatement:
+		if hasProcessMatchStatement(s.Left) {
+			return true
+		}
+		if hasProcessMatchStatement(s.Right) {
+			return true
+		}
+		return false
+	case OrStatement:
+		if hasProcessMatchStatement(s.Left) {
+			return true
+		}
+		if hasProcessMatchStatement(s.Right) {
+			return true
+		}
+		return false
+	}
+
+	return false
+}
+
+func hasSampleMatchStatement(statement Statement) bool {
+	switch s := statement.(type) {
+	case MatchStatement:
+		switch s.FieldType {
+		case SampleFieldType:
+			return true
+		case SampleAttributeFieldType:
+			return true
+		default:
+			return false
+		}
+	case AndStatement:
+		if hasSampleMatchStatement(s.Left) {
+			return true
+		}
+		if hasSampleMatchStatement(s.Right) {
+			return true
+		}
+		return false
+	case OrStatement:
+		if hasSampleMatchStatement(s.Left) {
+			return true
+		}
+		if hasSampleMatchStatement(s.Right) {
+			return true
+		}
+		return false
+	}
+
+	return false
+}
+
+func evalMatchingProcesses(db *DB, statement Statement) []mcmodel.Activity {
 	var matchingProcesses []mcmodel.Activity
 	uniqueProcessMatches := make(map[int]mcmodel.Activity)
 	for _, process := range db.Processes {
@@ -62,51 +140,82 @@ func EvalStatement(db *DB, statement Statement) []mcmodel.Activity {
 	for _, process := range uniqueProcessMatches {
 		matchingProcesses = append(matchingProcesses, process)
 	}
+
 	return matchingProcesses
 }
 
-func eval(db *DB, process *mcmodel.Activity, sample *mcmodel.Entity, statement Statement) bool {
+type SampleState struct {
+	sample        *mcmodel.Entity
+	EntityStateID int
+}
+
+func evalMatchingSamples(db *DB, statement Statement) []mcmodel.Entity {
+	var matchingSamples []mcmodel.Entity
+	uniqueSampleMatches := make(map[int]mcmodel.Entity)
+	for _, sample := range db.Samples {
+		for _, entityState := range sample.EntityStates {
+			sampleState := SampleState{&sample, entityState.ID}
+			if eval(db, nil, &sampleState, statement) {
+				// Found a match on the sample, no need to check other sample states so break out of the state loop
+				uniqueSampleMatches[sample.ID] = sample
+				break
+			}
+		}
+	}
+
+	for _, sample := range uniqueSampleMatches {
+		matchingSamples = append(matchingSamples, sample)
+	}
+
+	return matchingSamples
+}
+
+func eval(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement Statement) bool {
 	switch s := statement.(type) {
 	case MatchStatement:
-		return evalMatchStatement(db, process, sample, s)
+		return evalMatchStatement(db, process, sampleState, s)
 	case AndStatement:
-		return evalAndStatement(db, process, sample, s)
+		return evalAndStatement(db, process, sampleState, s)
 	case OrStatement:
-		return evalOrStatement(db, process, sample, s)
+		return evalOrStatement(db, process, sampleState, s)
 	default:
 		return false
 	}
 }
 
-func evalAndStatement(db *DB, process *mcmodel.Activity, sample *mcmodel.Entity, statement AndStatement) bool {
-	if !eval(db, process, sample, statement.Left) {
+func evalAndStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement AndStatement) bool {
+	if !eval(db, process, sampleState, statement.Left) {
 		return false
 	}
-	return eval(db, process, sample, statement.Right)
+	return eval(db, process, sampleState, statement.Right)
 }
 
-func evalOrStatement(db *DB, process *mcmodel.Activity, sample *mcmodel.Entity, statement OrStatement) bool {
-	leftResult := eval(db, process, sample, statement.Left)
-	rightResult := eval(db, process, sample, statement.Right)
+func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement OrStatement) bool {
+	leftResult := eval(db, process, sampleState, statement.Left)
+	rightResult := eval(db, process, sampleState, statement.Right)
 	return leftResult || rightResult
 }
 
-func evalMatchStatement(db *DB, process *mcmodel.Activity, sample *mcmodel.Entity, match MatchStatement) bool {
+func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, match MatchStatement) bool {
 	switch match.FieldType {
 	case ProcessFieldType:
 		return evalProcessFieldMatch(process, match)
 	case ProcessAttributeFieldType:
 		return evalProcessAttributeFieldMatch(process, db, match)
 	case SampleFieldType:
-		return evalSampleFieldMatch(sample, match)
+		return evalSampleFieldMatch(sampleState, match)
 	case SampleAttributeFieldType:
-		return evalSampleAttributeFieldMatch(sample, db, match)
+		return evalSampleAttributeFieldMatch(sampleState, db, match)
 	}
 
 	return false
 }
 
 func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
+	if process == nil {
+		return false
+	}
+
 	attributes, ok := db.ProcessAttributesByProcessID[process.ID]
 	if !ok {
 		fmt.Printf("    Process %d/%s has no attributes\n", process.ID, process.Name)
@@ -130,11 +239,19 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 	}
 }
 
-func evalSampleAttributeFieldMatch(sample *mcmodel.Entity, db *DB, match MatchStatement) bool {
-	attributes, ok := db.ProcessAttributesByProcessID[sample.ID]
-	if !ok {
-		fmt.Printf("    Process %d/%s has no attributes\n", sample.ID, sample.Name)
+func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match MatchStatement) bool {
+	if sampleState == nil {
 		return false
+	}
+	states, ok := db.SampleAttributesBySampleIDAndStates[sampleState.sample.ID]
+	if !ok {
+		fmt.Printf("    Sample %d/%s has no states\n", sampleState.sample.ID, sampleState.sample.Name)
+		return false
+	}
+
+	attributes, ok := states[sampleState.EntityStateID]
+	if !ok {
+		fmt.Printf("     Sample %d/%s with state %d has no attributes\n", sampleState.sample.ID, sampleState.sample.Name, sampleState.EntityStateID)
 	}
 
 	attribute, ok := attributes[match.FieldName]
@@ -184,6 +301,9 @@ func tryEvalAttributeStringMatch(val1 string, match MatchStatement) bool {
 }
 
 func evalProcessFieldMatch(process *mcmodel.Activity, match MatchStatement) bool {
+	if process == nil {
+		return false
+	}
 	if match.FieldName == "name" {
 		name, ok := match.Value.(string)
 		if !ok {
@@ -203,13 +323,16 @@ func evalProcessFieldMatch(process *mcmodel.Activity, match MatchStatement) bool
 	return false
 }
 
-func evalSampleFieldMatch(sample *mcmodel.Entity, match MatchStatement) bool {
+func evalSampleFieldMatch(sampleState *SampleState, match MatchStatement) bool {
+	if sampleState == nil {
+		return false
+	}
 	if match.FieldName == "name" {
 		name, ok := match.Value.(string)
 		if !ok {
 			return false
 		}
-		return evalStringMatch(name, sample.Name, match.Operation)
+		return evalStringMatch(name, sampleState.sample.Name, match.Operation)
 	}
 
 	if match.FieldName == "id" {
@@ -217,7 +340,7 @@ func evalSampleFieldMatch(sample *mcmodel.Entity, match MatchStatement) bool {
 		if !ok {
 			return false
 		}
-		return evalIntMatch(int64(id), int64(sample.ID), match.Operation)
+		return evalIntMatch(int64(id), int64(sampleState.sample.ID), match.Operation)
 	}
 
 	return false

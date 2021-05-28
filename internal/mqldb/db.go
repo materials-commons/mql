@@ -12,7 +12,7 @@ type DB struct {
 	Processes                    []mcmodel.Activity
 	AllProcessAttributes         []*mcmodel.Attribute
 	ProcessAttributesByProcessID map[int]map[string]*mcmodel.Attribute
-	Samples                      []*mcmodel.Entity
+	Samples                      []mcmodel.Entity
 	AllSampleAttributes          []*mcmodel.Attribute
 
 	// A sample can have multiple states, thus this maps a sample id to a list of states, then each
