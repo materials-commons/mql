@@ -25,26 +25,30 @@ type Statement interface {
 }
 
 type AndStatement struct {
-	Left  Statement
-	Right Statement
+	// Ignored field that is here to distinguish json from "OrStatement"
+	And   int       `json:"and"`
+	Left  Statement `json:"left"`
+	Right Statement `json:"right"`
 }
 
 func (s AndStatement) statementNode() {
 }
 
 type OrStatement struct {
-	Left  Statement
-	Right Statement
+	// Ignored field that is here to distinguish json from "AndStatement"
+	Or    int       `json:"or"`
+	Left  Statement `json:"left"`
+	Right Statement `json:"right"`
 }
 
 func (s OrStatement) statementNode() {
 }
 
 type MatchStatement struct {
-	FieldType int
-	FieldName string
-	Operation string
-	Value     interface{}
+	FieldType int         `json:"field_type"`
+	FieldName string      `json:"field_name"`
+	Operation string      `json:"operation"`
+	Value     interface{} `json:"value"`
 }
 
 func (s MatchStatement) statementNode() {
