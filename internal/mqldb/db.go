@@ -49,7 +49,7 @@ func (db *DB) Load() error {
 		return err
 	}
 
-	err := db.db.Where("attributable_type = ?", "App\\Models\\Activity").
+	err := db.db.Preload("AttributeValues").Where("attributable_type = ?", "App\\Models\\Activity").
 		Where("attributable_id in (select id from activities where project_id = ?)", db.ProjectID).
 		Find(&db.AllProcessAttributes).Error
 	if err != nil {
@@ -62,8 +62,8 @@ func (db *DB) Load() error {
 
 	for i, attr := range db.AllProcessAttributes {
 		db.ProcessAttributesByProcessID[attr.AttributableID][attr.Name] = db.AllProcessAttributes[i]
-		if err := attr.LoadValue(); err != nil {
-			log.Errorf("Failed converting attribute %d/%s value (%s): %s", attr.ID, attr.Name, attr.Val, err)
+		if err := attr.LoadValues(); err != nil {
+			log.Errorf("Failed converting attribute %d/%s values: %s", attr.ID, attr.Name, err)
 		}
 	}
 
@@ -72,8 +72,10 @@ func (db *DB) Load() error {
 		return err
 	}
 
-	err = db.db.Where("attributable_type = ?", "App\\Models\\EntityState").
-		Where("attributable_id in (select distinct id from entity_states where entity_id in (select id from entities where project_id = ?))", db.ProjectID).
+	err = db.db.Preload("AttributeValues").Where("attributable_type = ?", "App\\Models\\EntityState").
+		Where(`attributable_id in 
+                       (select distinct id from entity_states where entity_id in 
+                               (select id from entities where project_id = ?))`, db.ProjectID).
 		Find(&db.AllSampleAttributes).Error
 	if err != nil {
 		return err

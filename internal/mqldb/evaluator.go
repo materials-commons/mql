@@ -231,16 +231,18 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 		return false
 	}
 
-	switch attribute.Value.ValueType {
-	case mcmodel.ValueTypeInt:
-		return tryEvalAttributeIntMatch(attribute.Value.ValueInt, match)
-	case mcmodel.ValueTypeFloat:
-		return tryEvalAttributeFloatMatch(attribute.Value.ValueFloat, match)
-	case mcmodel.ValueTypeString:
-		return tryEvalAttributeStringMatch(attribute.Value.ValueString, match)
-	default:
-		return false
+	for _, value := range attribute.AttributeValues {
+		switch value.ValueType {
+		case mcmodel.ValueTypeInt:
+			return tryEvalAttributeIntMatch(value.ValueInt, match)
+		case mcmodel.ValueTypeFloat:
+			return tryEvalAttributeFloatMatch(value.ValueFloat, match)
+		case mcmodel.ValueTypeString:
+			return tryEvalAttributeStringMatch(value.ValueString, match)
+		}
 	}
+
+	return false
 }
 
 func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match MatchStatement) bool {
@@ -263,16 +265,18 @@ func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match Match
 		return false
 	}
 
-	switch attribute.Value.ValueType {
-	case mcmodel.ValueTypeInt:
-		return tryEvalAttributeIntMatch(attribute.Value.ValueInt, match)
-	case mcmodel.ValueTypeFloat:
-		return tryEvalAttributeFloatMatch(attribute.Value.ValueFloat, match)
-	case mcmodel.ValueTypeString:
-		return tryEvalAttributeStringMatch(attribute.Value.ValueString, match)
-	default:
-		return false
+	for _, value := range attribute.AttributeValues {
+		switch value.ValueType {
+		case mcmodel.ValueTypeInt:
+			return tryEvalAttributeIntMatch(value.ValueInt, match)
+		case mcmodel.ValueTypeFloat:
+			return tryEvalAttributeFloatMatch(value.ValueFloat, match)
+		case mcmodel.ValueTypeString:
+			return tryEvalAttributeStringMatch(value.ValueString, match)
+		}
 	}
+
+	return false
 }
 
 func tryEvalAttributeIntMatch(val1 int64, match MatchStatement) bool {

@@ -41,23 +41,29 @@ func createTestDB() *DB {
 	db.ProcessAttributesByProcessID[1] = make(map[string]*mcmodel.Attribute)
 	db.ProcessAttributesByProcessID[1]["Beam Type"] = &mcmodel.Attribute{
 		Name: "Beam Type",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "Wide",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "Wide",
+			},
 		},
 	}
 	db.ProcessAttributesByProcessID[1]["frames per second"] = &mcmodel.Attribute{
 		Name: "frames per second",
-		Value: mcmodel.AttributeValue{
-			ValueType: mcmodel.ValueTypeInt,
-			ValueInt:  5,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType: mcmodel.ValueTypeInt,
+				ValueInt:  5,
+			},
 		},
 	}
 	db.ProcessAttributesByProcessID[1]["note"] = &mcmodel.Attribute{
 		Name: "note",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "ignore these results",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "ignore these results",
+			},
 		},
 	}
 
@@ -65,16 +71,20 @@ func createTestDB() *DB {
 	db.ProcessAttributesByProcessID[2] = make(map[string]*mcmodel.Attribute)
 	db.ProcessAttributesByProcessID[2]["Beam Type"] = &mcmodel.Attribute{
 		Name: "Beam Type",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "Thin",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "Thin",
+			},
 		},
 	}
 	db.ProcessAttributesByProcessID[2]["frames per second"] = &mcmodel.Attribute{
 		Name: "frames per second",
-		Value: mcmodel.AttributeValue{
-			ValueType: mcmodel.ValueTypeInt,
-			ValueInt:  3,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType: mcmodel.ValueTypeInt,
+				ValueInt:  3,
+			},
 		},
 	}
 
@@ -82,16 +92,20 @@ func createTestDB() *DB {
 	db.ProcessAttributesByProcessID[3] = make(map[string]*mcmodel.Attribute)
 	db.ProcessAttributesByProcessID[3]["PF scale max"] = &mcmodel.Attribute{
 		Name: "PF scale max",
-		Value: mcmodel.AttributeValue{
-			ValueType: mcmodel.ValueTypeInt,
-			ValueInt:  2,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType: mcmodel.ValueTypeInt,
+				ValueInt:  2,
+			},
 		},
 	}
 	db.ProcessAttributesByProcessID[3]["note"] = &mcmodel.Attribute{
 		Name: "note",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "ignore these results",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "ignore these results",
+			},
 		},
 	}
 
@@ -99,9 +113,11 @@ func createTestDB() *DB {
 	db.ProcessAttributesByProcessID[4] = make(map[string]*mcmodel.Attribute)
 	db.ProcessAttributesByProcessID[4]["PF scale max"] = &mcmodel.Attribute{
 		Name: "PF scale max",
-		Value: mcmodel.AttributeValue{
-			ValueType: mcmodel.ValueTypeInt,
-			ValueInt:  3,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType: mcmodel.ValueTypeInt,
+				ValueInt:  3,
+			},
 		},
 	}
 
@@ -121,39 +137,49 @@ func createTestDB() *DB {
 	db.SampleAttributesBySampleIDAndStates[1][1] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[1][1]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.5,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.5,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[1][1]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.4,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.4,
+			},
 		},
 	}
 
 	db.SampleAttributesBySampleIDAndStates[1][2] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[1][2]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.5,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.5,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[1][2]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.5,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.5,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[1][2]["hardness"] = &mcmodel.Attribute{
 		Name: "hardness",
-		Value: mcmodel.AttributeValue{
-			ValueType: mcmodel.ValueTypeInt,
-			ValueInt:  1,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType: mcmodel.ValueTypeInt,
+				ValueInt:  1,
+			},
 		},
 	}
 
@@ -171,53 +197,67 @@ func createTestDB() *DB {
 	db.SampleAttributesBySampleIDAndStates[2][3] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[2][3]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.5,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.5,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[2][3]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.4,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.4,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[2][3]["ductility"] = &mcmodel.Attribute{
 		Name: "ductility",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.81,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.81,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[2][3]["alloy"] = &mcmodel.Attribute{
 		Name: "alloy",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "zn45",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "zn45",
+			},
 		},
 	}
 
 	db.SampleAttributesBySampleIDAndStates[2][4] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[2][4]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.6,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.6,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[2][4]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.3,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.3,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[2][4]["bend"] = &mcmodel.Attribute{
 		Name: "bend",
-		Value: mcmodel.AttributeValue{
-			ValueType:   mcmodel.ValueTypeString,
-			ValueString: "Right",
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:   mcmodel.ValueTypeString,
+				ValueString: "Right",
+			},
 		},
 	}
 
@@ -235,32 +275,40 @@ func createTestDB() *DB {
 	db.SampleAttributesBySampleIDAndStates[3][5] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[3][5]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.68,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.68,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[3][5]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.32,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.32,
+			},
 		},
 	}
 
 	db.SampleAttributesBySampleIDAndStates[3][6] = make(map[string]*mcmodel.Attribute)
 	db.SampleAttributesBySampleIDAndStates[3][6]["zn"] = &mcmodel.Attribute{
 		Name: "zn",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.45,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.45,
+			},
 		},
 	}
 	db.SampleAttributesBySampleIDAndStates[3][6]["mg"] = &mcmodel.Attribute{
 		Name: "mg",
-		Value: mcmodel.AttributeValue{
-			ValueType:  mcmodel.ValueTypeFloat,
-			ValueFloat: 0.45,
+		AttributeValues: []mcmodel.AttributeValue{
+			{
+				ValueType:  mcmodel.ValueTypeFloat,
+				ValueFloat: 0.45,
+			},
 		},
 	}
 
