@@ -7,13 +7,19 @@ import (
 )
 
 type DB struct {
-	ProjectID                    int
-	db                           *gorm.DB
+	ProjectID int
+	db        *gorm.DB
+
+	// Process and process data lookups
 	Processes                    []mcmodel.Activity
 	AllProcessAttributes         []*mcmodel.Attribute
 	ProcessAttributesByProcessID map[int]map[string]*mcmodel.Attribute
-	Samples                      []mcmodel.Entity
-	AllSampleAttributes          []*mcmodel.Attribute
+	ProcessSamples               map[int][]*mcmodel.Entity
+
+	// Sample and sample data lookups
+	Samples             []mcmodel.Entity
+	SampleProcesses     map[int][]*mcmodel.Activity
+	AllSampleAttributes []*mcmodel.Attribute
 
 	// A sample can have multiple states, thus this maps a sample id to a list of states, then each
 	// state is a hash map of the attribute name to the attribute structure. For example, given a
@@ -40,8 +46,20 @@ func NewDB(projectID int, db *gorm.DB) *DB {
 		ProjectID:                           projectID,
 		db:                                  db,
 		ProcessAttributesByProcessID:        make(map[int]map[string]*mcmodel.Attribute),
+		ProcessSamples:                      make(map[int][]*mcmodel.Entity),
 		SampleAttributesBySampleIDAndStates: make(map[int]map[int]map[string]*mcmodel.Attribute),
+		SampleProcesses:                     make(map[int][]*mcmodel.Activity),
 	}
+}
+
+type Activity2Entity struct {
+	ID         int
+	ActivityID int
+	EntityID   int
+}
+
+func (Activity2Entity) TableName() string {
+	return "activity2entity"
 }
 
 func (db *DB) Load() error {
@@ -99,6 +117,42 @@ func (db *DB) Load() error {
 		// Here AttributableType == "App\Models\EntityState" and AttributableID == EntityState.ID
 		sampleID := entityStateIDToSampleID[attr.AttributableID]
 		db.SampleAttributesBySampleIDAndStates[sampleID][attr.AttributableID][attr.Name] = db.AllSampleAttributes[i]
+	}
+
+	// Now setup mapping of samples -> to their associated processes, and processes -> to their associated samples
+	var activity2entity []Activity2Entity
+	err = db.db.Where("entity_id in (select id from entities where project_id = ?)", db.ProjectID).
+		Find(&activity2entity).Error
+	if err != nil {
+		return err
+	}
+
+	// For fast lookup map the samples and processes by their id. This will be used in activity2entity work below
+	// to create db entry map of samples to their list of processes, and processes to their list of samples.
+	sampleMap := make(map[int]*mcmodel.Entity)
+	for i := range db.Samples {
+		sampleMap[db.Samples[i].ID] = &db.Samples[i]
+	}
+
+	processMap := make(map[int]*mcmodel.Activity)
+	for i := range db.Processes {
+		processMap[db.Processes[i].ID] = &db.Processes[i]
+	}
+
+	for _, a2e := range activity2entity {
+		sample := sampleMap[a2e.EntityID]
+		process := processMap[a2e.ActivityID]
+		if sample != nil {
+			if process != nil {
+				db.SampleProcesses[sample.ID] = append(db.SampleProcesses[sample.ID], process)
+			}
+		}
+
+		if process != nil {
+			if sample != nil {
+				db.ProcessSamples[process.ID] = append(db.ProcessSamples[process.ID], sample)
+			}
+		}
 	}
 
 	return nil

@@ -13,12 +13,10 @@ const (
 	SampleAttributeFieldType  = 4
 )
 
-//type MatchStatement struct {
-//	FieldType int
-//	FieldName string
-//	Operation string
-//	Value     interface{}
-//}
+type Selection struct {
+	SelectProcesses bool
+	SelectSamples   bool
+}
 
 type Statement interface {
 	statementNode()
@@ -54,18 +52,133 @@ type MatchStatement struct {
 func (s MatchStatement) statementNode() {
 }
 
-func EvalStatement(db *DB, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
-	var matchingProcesses []mcmodel.Activity
-	if hasProcessMatchStatement(statement) {
-		matchingProcesses = evalMatchingProcesses(db, statement)
+func EvalStatement(db *DB, selection Selection, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
+	var (
+		matchingProcesses []mcmodel.Activity
+		matchingSamples   []mcmodel.Entity
+	)
+	switch {
+	case selection.SelectProcesses && selection.SelectSamples:
+		matchingProcesses, matchingSamples = evalSelectProcessesAndSamples(db, statement)
+	case selection.SelectSamples:
+		matchingSamples = evalSelectSamples(db, statement)
+	case selection.SelectProcesses:
+		matchingProcesses = evalSelectProcesses(db, statement)
 	}
 
+	return matchingProcesses, matchingSamples
+}
+
+func evalSelectProcessesAndSamples(db *DB, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
+	processes := evalSelectProcesses(db, statement)
+	samples := evalSelectSamples(db, statement)
+	return processes, samples
+}
+
+func evalSelectSamples(db *DB, statement Statement) []mcmodel.Entity {
 	var matchingSamples []mcmodel.Entity
+	var matchingProcesses []mcmodel.Activity
+
 	if hasSampleMatchStatement(statement) {
 		matchingSamples = evalMatchingSamples(db, statement)
 	}
 
-	return matchingProcesses, matchingSamples
+	if hasProcessMatchStatement(statement) {
+		matchingProcesses = evalMatchingProcesses(db, statement)
+	}
+
+	processSamples := uniqueSamplesForProcesses(db, matchingProcesses)
+
+	// We now have two lists of samples - samples that matched from evalMatchingSamples, and samples that
+	// were matched by finding the processes and then the samples for those processes. These two lists of
+	// samples may share the same sample. Since we want to return just the unique list of matches we go
+	// through each of these lists to identify the samples that are unique across the lists. We do this
+	// by creating a hash table of sample ids. Then taking those unique samples and creating a list of
+	// the unique samples to return.
+	var samplesToReturn []mcmodel.Entity
+	uniqueSamples := make(map[int]mcmodel.Entity)
+	for _, sample := range matchingSamples {
+		uniqueSamples[sample.ID] = sample
+	}
+
+	for _, sample := range processSamples {
+		uniqueSamples[sample.ID] = sample
+	}
+
+	for _, sample := range uniqueSamples {
+		samplesToReturn = append(samplesToReturn, sample)
+	}
+
+	return samplesToReturn
+}
+
+func uniqueSamplesForProcesses(db *DB, processes []mcmodel.Activity) []mcmodel.Entity {
+	var samples []mcmodel.Entity
+	uniqueSamples := make(map[int]*mcmodel.Entity)
+	for _, process := range processes {
+		for _, sample := range db.ProcessSamples[process.ID] {
+			uniqueSamples[sample.ID] = sample
+		}
+	}
+
+	for _, sample := range uniqueSamples {
+		samples = append(samples, *sample)
+	}
+
+	return samples
+}
+
+func evalSelectProcesses(db *DB, statement Statement) []mcmodel.Activity {
+	var matchingProcesses []mcmodel.Activity
+	var matchingSamples []mcmodel.Entity
+
+	if hasProcessMatchStatement(statement) {
+		matchingProcesses = evalMatchingProcesses(db, statement)
+	}
+
+	if hasSampleMatchStatement(statement) {
+		matchingSamples = evalMatchingSamples(db, statement)
+	}
+
+	sampleProcesses := uniqueProcessesForSamples(db, matchingSamples)
+
+	// We now have two lists of processes - processes that matched from evalMatchingProcesses, and processes that
+	// were matched by finding the samples and then the processes for those samples. These two lists of
+	// processes may share the same process. Since we want to return just the unique list of matches we go
+	// through each of these lists to identify the processes that are unique across the lists. We do this
+	// by creating a hash table of process ids. Then taking those unique processes and creating a list of
+	// the unique processes to return.
+	var processesToReturn []mcmodel.Activity
+	uniqueProcesses := make(map[int]mcmodel.Activity)
+	for _, process := range matchingProcesses {
+		uniqueProcesses[process.ID] = process
+	}
+
+	for _, process := range sampleProcesses {
+		uniqueProcesses[process.ID] = process
+	}
+
+	for _, sample := range uniqueProcesses {
+		processesToReturn = append(processesToReturn, sample)
+	}
+
+	return processesToReturn
+}
+
+func uniqueProcessesForSamples(db *DB, samples []mcmodel.Entity) []mcmodel.Activity {
+	var processes []mcmodel.Activity
+	uniqueProcesses := make(map[int]*mcmodel.Activity)
+	for _, sample := range samples {
+		for _, process := range db.SampleProcesses[sample.ID] {
+			uniqueProcesses[process.ID] = process
+		}
+	}
+
+	for _, process := range uniqueProcesses {
+		processes = append(processes, *process)
+	}
+
+	return processes
 }
 
 func hasProcessMatchStatement(statement Statement) bool {
