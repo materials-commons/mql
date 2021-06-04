@@ -63,6 +63,18 @@ func (Activity2Entity) TableName() string {
 }
 
 func (db *DB) Load() error {
+	if err := db.loadProcessesAndAttributes(); err != nil {
+		return err
+	}
+
+	if err := db.loadSamplesAndAttributes(); err != nil {
+		return err
+	}
+
+	return db.loadProcessSampleMappings()
+}
+
+func (db *DB) loadProcessesAndAttributes() error {
 	if err := db.db.Where("project_id = ?", db.ProjectID).Find(&db.Processes).Error; err != nil {
 		return err
 	}
@@ -85,7 +97,11 @@ func (db *DB) Load() error {
 		}
 	}
 
-	err = db.db.Preload("EntityStates").Where("project_id = ?", db.ProjectID).Find(&db.Samples).Error
+	return nil
+}
+
+func (db *DB) loadSamplesAndAttributes() error {
+	err := db.db.Preload("EntityStates").Where("project_id = ?", db.ProjectID).Find(&db.Samples).Error
 	if err != nil {
 		return err
 	}
@@ -119,9 +135,13 @@ func (db *DB) Load() error {
 		db.SampleAttributesBySampleIDAndStates[sampleID][attr.AttributableID][attr.Name] = db.AllSampleAttributes[i]
 	}
 
+	return nil
+}
+
+func (db *DB) loadProcessSampleMappings() error {
 	// Now setup mapping of samples -> to their associated processes, and processes -> to their associated samples
 	var activity2entity []Activity2Entity
-	err = db.db.Where("entity_id in (select id from entities where project_id = ?)", db.ProjectID).
+	err := db.db.Where("entity_id in (select id from entities where project_id = ?)", db.ProjectID).
 		Find(&activity2entity).Error
 	if err != nil {
 		return err
