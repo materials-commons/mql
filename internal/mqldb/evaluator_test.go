@@ -14,7 +14,7 @@ func TestSimpleProcessQueries(t *testing.T) {
 		Value:     "Texture",
 	}
 
-	selection := Selection{SelectProcesses: true}
+	selection := selectAllProcesses()
 	matchingProcesses, _ := EvalStatement(db, selection, processMatchStatement)
 	if len(matchingProcesses) != 2 {
 		t.Fatalf("Expected 2 matches on name = 'Texture', but got %d", len(matchingProcesses))
@@ -117,7 +117,7 @@ func TestComplexAndOrStatementProcessQuery(t *testing.T) {
 		Right: rightSideOfOrStatement,
 	}
 
-	selection := Selection{SelectProcesses: true}
+	selection := selectAllProcesses()
 
 	matchingProcesses, _ := EvalStatement(db, selection, orStatement)
 	if len(matchingProcesses) != 3 {
@@ -138,7 +138,7 @@ func TestSimpleSampleQueries(t *testing.T) {
 		Value:     "S1",
 	}
 
-	selection := Selection{SelectSamples: true}
+	selection := selectAllSamples()
 	_, matchingSamples := EvalStatement(db, selection, sampleNameMatchStatement)
 	if len(matchingSamples) != 1 {
 		t.Fatalf("Expected 1 match on: name = 'S1', got %d", len(matchingSamples))
@@ -210,7 +210,7 @@ func TestComplexAndOrStatementSampleQuery(t *testing.T) {
 		Right: rightSideOfOrStatement,
 	}
 
-	selection := Selection{SelectSamples: true}
+	selection := selectAllSamples()
 	_, matchingSamples := EvalStatement(db, selection, orStatement)
 	if len(matchingSamples) != 2 {
 		t.Fatalf(`Expected x matches on:
@@ -222,7 +222,7 @@ func TestComplexAndOrStatementSampleQuery(t *testing.T) {
 
 func TestSimpleSelectProcessesThroughSamplesQuery(t *testing.T) {
 	db := createTestDB()
-	selection := Selection{SelectProcesses: true}
+	selection := selectAllProcesses()
 	matchStatement := MatchStatement{
 		FieldType: SampleAttributeFieldType,
 		FieldName: "alloy",
@@ -242,7 +242,7 @@ func TestSimpleSelectProcessesThroughSamplesQuery(t *testing.T) {
 
 func TestSimpleSelectSamplesThroughProcessesQuery(t *testing.T) {
 	db := createTestDB()
-	selection := Selection{SelectSamples: true}
+	selection := selectAllSamples()
 	matchStatement := MatchStatement{
 		FieldType: ProcessAttributeFieldType,
 		FieldName: "Beam Type",

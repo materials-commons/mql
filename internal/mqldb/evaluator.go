@@ -12,11 +12,11 @@ func EvalStatement(db *DB, selection Selection, statement Statement) ([]mcmodel.
 		matchingSamples   []mcmodel.Entity
 	)
 	switch {
-	case selection.SelectProcesses && selection.SelectSamples:
+	case selection.ProcessSelection.All && selection.SampleSelection.All:
 		matchingProcesses, matchingSamples = evalSelectProcessesAndSamples(db, statement)
-	case selection.SelectSamples:
+	case selection.SampleSelection.All:
 		matchingSamples = evalSelectSamples(db, statement)
-	case selection.SelectProcesses:
+	case selection.ProcessSelection.All:
 		matchingProcesses = evalSelectProcesses(db, statement)
 	}
 

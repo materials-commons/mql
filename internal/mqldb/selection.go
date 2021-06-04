@@ -1,6 +1,20 @@
 package mqldb
 
 type Selection struct {
-	SelectProcesses bool
-	SelectSamples   bool
+	ProcessSelection ProcessSelection
+	SampleSelection  SampleSelection
+}
+
+type ProcessSelection struct {
+	All        bool
+	Name       bool
+	ID         bool
+	Attributes []string
+}
+
+type SampleSelection struct {
+	All        bool
+	Name       bool
+	ID         bool
+	Attributes []string
 }

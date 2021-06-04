@@ -352,3 +352,19 @@ func createTestDB() *DB {
 
 	return db
 }
+
+func selectAllProcesses() Selection {
+	return Selection{
+		ProcessSelection: ProcessSelection{
+			All: true,
+		},
+	}
+}
+
+func selectAllSamples() Selection {
+	return Selection{
+		SampleSelection: SampleSelection{
+			All: true,
+		},
+	}
+}
