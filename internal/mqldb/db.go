@@ -41,6 +41,8 @@ type DB struct {
 	SampleAttributesBySampleIDAndStates map[int]map[int]map[string]*mcmodel.Attribute
 }
 
+// NewDB creates a new in memory instance of the samples, processes, attributes and their relationships DB that
+// is used by the evaluator for query processing.
 func NewDB(projectID int, db *gorm.DB) *DB {
 	return &DB{
 		ProjectID:                           projectID,
@@ -52,6 +54,7 @@ func NewDB(projectID int, db *gorm.DB) *DB {
 	}
 }
 
+// Activity2Entity represents the join table for mapping the relationships between processes and samples.
 type Activity2Entity struct {
 	ID         int
 	ActivityID int
@@ -62,6 +65,7 @@ func (Activity2Entity) TableName() string {
 	return "activity2entity"
 }
 
+// Load loads the samples, processes and attributes for the given project into memory.
 func (db *DB) Load() error {
 	if err := db.loadProcessesAndAttributes(); err != nil {
 		return err
@@ -71,7 +75,15 @@ func (db *DB) Load() error {
 		return err
 	}
 
-	return db.loadProcessSampleMappings()
+	if err := db.loadProcessSampleMappings(); err != nil {
+		return err
+	}
+
+	if err := db.wireupAttributesToProcessesAndSamples(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (db *DB) loadProcessesAndAttributes() error {
@@ -172,6 +184,43 @@ func (db *DB) loadProcessSampleMappings() error {
 			if sample != nil {
 				db.ProcessSamples[process.ID] = append(db.ProcessSamples[process.ID], sample)
 			}
+		}
+	}
+
+	return nil
+}
+
+func (db *DB) wireupAttributesToProcessesAndSamples() error {
+	// Add the process attributes to each process
+	for i := range db.Processes {
+		for attrName := range db.ProcessAttributesByProcessID[db.Processes[i].ID] {
+			attr := db.ProcessAttributesByProcessID[db.Processes[i].ID][attrName]
+			db.Processes[i].Attributes = append(db.Processes[i].Attributes, *attr)
+		}
+	}
+
+	// Add the sample state and sample state attributes to each sample by iterating through the
+	// SampleAttributesBySampleIDAndStates map that is a multi-level hash map of
+	// samples -> sample states -> attrNames ->Attribute
+	for i := range db.Samples {
+		sampleID := db.Samples[i].ID
+		for sampleStateID := range db.SampleAttributesBySampleIDAndStates[sampleID] {
+			// We have the Sample State ID, so create a sample state that will be used to
+			// add attributes specific to that state, and then append that state to the
+			// list of sample states for the sample.
+			entityState := mcmodel.EntityState{
+				ID:       sampleStateID,
+				EntityID: sampleID,
+			}
+
+			// Add attributes for that sample state to the state we just created
+			for attrName := range db.SampleAttributesBySampleIDAndStates[sampleID][sampleStateID] {
+				attr := db.SampleAttributesBySampleIDAndStates[sampleID][sampleStateID][attrName]
+				entityState.Attributes = append(entityState.Attributes, *attr)
+			}
+
+			// Append that sample state to the list of sample states for this sample
+			db.Samples[i].EntityStates = append(db.Samples[i].EntityStates, entityState)
 		}
 	}
 
