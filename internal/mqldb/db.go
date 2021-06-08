@@ -67,6 +67,12 @@ func (Activity2Entity) TableName() string {
 
 // Load loads the samples, processes and attributes for the given project into memory.
 func (db *DB) Load() error {
+	// Make sure project exists
+	var project mcmodel.Project
+	if err := db.db.First(&project, db.ProjectID).Error; err != nil {
+		return err
+	}
+
 	if err := db.loadProcessesAndAttributes(); err != nil {
 		return err
 	}

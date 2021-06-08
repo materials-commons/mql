@@ -39,7 +39,11 @@ func LoadProjectController(c echo.Context) error {
 		return nil
 	}
 
-	return loadProjectDB(req.ProjectID)
+	if err := loadProjectDB(req.ProjectID); err != nil {
+		return badRequest(err)
+	}
+
+	return nil
 }
 
 func ReloadProjectController(c echo.Context) error {
@@ -54,7 +58,11 @@ func ReloadProjectController(c echo.Context) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	return loadProjectDB(req.ProjectID)
+	if err := loadProjectDB(req.ProjectID); err != nil {
+		return badRequest(err)
+	}
+
+	return nil
 }
 
 func ExecuteQueryController(c echo.Context) error {
@@ -70,7 +78,7 @@ func ExecuteQueryController(c echo.Context) error {
 	}
 
 	if req.ProjectID == 0 {
-		return fmt.Errorf("unknown project: %d", req.ProjectID)
+		return badRequest(fmt.Errorf("illegal project: %d", req.ProjectID))
 	}
 
 	mutex.Lock()
@@ -78,7 +86,7 @@ func ExecuteQueryController(c echo.Context) error {
 
 	db, ok := mqlDBByProjectID[req.ProjectID]
 	if !ok {
-		return fmt.Errorf("project not loaded")
+		return badRequest(fmt.Errorf("project %d was never loaded", req.ProjectID))
 	}
 
 	selection := mqldb.Selection{
@@ -104,10 +112,13 @@ func ExecuteQueryController(c echo.Context) error {
 func loadProjectDB(projectID int) error {
 	db := mqldb.NewDB(projectID, DB)
 	if err := db.Load(); err != nil {
-		// do something
-		return err
+		return fmt.Errorf("failed to load project: %d", projectID)
 	}
 
 	mqlDBByProjectID[projectID] = db
 	return nil
+}
+
+func badRequest(err error) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("%s", err))
 }
