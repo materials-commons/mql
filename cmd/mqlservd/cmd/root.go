@@ -18,6 +18,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/apex/log"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	mcdb "github.com/materials-commons/gomcdb"
+	"github.com/materials-commons/mql/internal/web/api"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +42,25 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		e := echo.New()
+		e.HideBanner = true
+		e.HidePort = true
+		e.Use(middleware.Recover())
+
+		db := mcdb.MustConnectToDB()
+
+		api.Init(db)
+
+		g := e.Group("/api")
+		g.POST("/load-project", api.LoadProjectController)
+		g.POST("/reload-project", api.ReloadProjectController)
+		g.POST("/execute-query", api.ExecuteQueryController)
+
+		if err := e.Start("localhost:1324"); err != nil {
+			log.Fatalf("Unable to start web server: %s", err)
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
