@@ -67,10 +67,10 @@ func ReloadProjectController(c echo.Context) error {
 
 func ExecuteQueryController(c echo.Context) error {
 	var req struct {
-		Statement       mqldb.Statement `json:"statement"`
-		ProjectID       int             `json:"project_id"`
-		SelectProcesses bool            `json:"select_processes"`
-		SelectSamples   bool            `json:"select_samples"`
+		Statement       map[string]interface{} `json:"statement"`
+		ProjectID       int                    `json:"project_id"`
+		SelectProcesses bool                   `json:"select_processes"`
+		SelectSamples   bool                   `json:"select_samples"`
 	}
 
 	if err := c.Bind(&req); err != nil {
@@ -80,6 +80,8 @@ func ExecuteQueryController(c echo.Context) error {
 	if req.ProjectID == 0 {
 		return badRequest(fmt.Errorf("illegal project: %d", req.ProjectID))
 	}
+
+	statement := mqldb.MapToStatement(req.Statement)
 
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -97,12 +99,13 @@ func ExecuteQueryController(c echo.Context) error {
 			All: req.SelectProcesses,
 		},
 	}
+	selection.ProcessSelection.All = true
 	var resp struct {
 		Processes []mcmodel.Activity `json:"processes"`
 		Samples   []mcmodel.Entity   `json:"samples"`
 	}
 
-	resp.Processes, resp.Samples = mqldb.EvalStatement(db, selection, req.Statement)
+	resp.Processes, resp.Samples = mqldb.EvalStatement(db, selection, statement)
 
 	return c.JSON(http.StatusOK, &resp)
 }
