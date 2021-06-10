@@ -1,7 +1,5 @@
 package mqldb
 
-import "fmt"
-
 func MapToStatement(m map[string]interface{}) Statement {
 	_, hasAnd := m["and"]
 	_, hasOr := m["or"]
@@ -36,7 +34,6 @@ func MapToStatement(m map[string]interface{}) Statement {
 		return orStatement
 
 	case hasFieldName:
-		fmt.Printf("m = %+v\n", m)
 		return MatchStatement{
 			FieldType: int(m["field_type"].(float64)),
 			FieldName: m["field_name"].(string),
