@@ -151,6 +151,9 @@ func (db *DB) loadSamplesAndAttributes() error {
 		// Here AttributableType == "App\Models\EntityState" and AttributableID == EntityState.ID
 		sampleID := entityStateIDToSampleID[attr.AttributableID]
 		db.SampleAttributesBySampleIDAndStates[sampleID][attr.AttributableID][attr.Name] = db.AllSampleAttributes[i]
+		if err := attr.LoadValues(); err != nil {
+			log.Errorf("Failed converting attribute %d/%s values: %s", attr.ID, attr.Name, err)
+		}
 	}
 
 	return nil
