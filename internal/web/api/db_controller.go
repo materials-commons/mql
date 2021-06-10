@@ -99,7 +99,7 @@ func ExecuteQueryController(c echo.Context) error {
 			All: req.SelectProcesses,
 		},
 	}
-	selection.ProcessSelection.All = true
+
 	var resp struct {
 		Processes []mcmodel.Activity `json:"processes"`
 		Samples   []mcmodel.Entity   `json:"samples"`
