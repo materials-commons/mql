@@ -194,13 +194,16 @@ func evalAndStatement(db *DB, process *mcmodel.Activity, sampleState *SampleStat
 	if !eval(db, process, sampleState, statement.Left) {
 		return false
 	}
+
 	return eval(db, process, sampleState, statement.Right)
 }
 
 func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement OrStatement) bool {
-	leftResult := eval(db, process, sampleState, statement.Left)
-	rightResult := eval(db, process, sampleState, statement.Right)
-	return leftResult || rightResult
+	if eval(db, process, sampleState, statement.Left) {
+		return true
+	}
+
+	return eval(db, process, sampleState, statement.Right)
 }
 
 func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, match MatchStatement) bool {
