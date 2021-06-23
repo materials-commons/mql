@@ -34,9 +34,13 @@ func MapToStatement(m map[string]interface{}) Statement {
 		return orStatement
 
 	case hasFieldName:
+		fieldName, ok := m["field_name"].(string)
+		if !ok {
+			fieldName = ""
+		}
 		return MatchStatement{
 			FieldType: int(m["field_type"].(float64)),
-			FieldName: m["field_name"].(string),
+			FieldName: fieldName,
 			Operation: m["operation"].(string),
 			Value:     m["value"],
 		}

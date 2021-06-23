@@ -216,8 +216,40 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 		return evalSampleFieldMatch(sampleState, match)
 	case SampleAttributeFieldType:
 		return evalSampleAttributeFieldMatch(sampleState, db, match)
+	case ProcessFuncType:
+		return evalProcessFuncMatch(process, db, match)
+	case SampleFuncType:
+		return evalSampleFuncMatch(sampleState, db, match)
 	}
 
+	return false
+}
+
+func evalSampleFuncMatch(state *SampleState, db *DB, match MatchStatement) bool {
+	switch {
+	case match.Operation == "has-process":
+		return evalSampleFuncMatchHasProcess(state, db, match.Value.(string))
+	}
+	return false
+}
+
+func evalSampleFuncMatchHasProcess(state *SampleState, db *DB, processType string) bool {
+	processes, ok := db.SampleProcesses[state.sample.ID]
+	if !ok {
+		// weird... sample doesn't have any processes... (shouldn't happen)
+		return false
+	}
+
+	for _, process := range processes {
+		if process.Name == processType {
+			return true
+		}
+	}
+
+	return false
+}
+
+func evalProcessFuncMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
 	return false
 }
 

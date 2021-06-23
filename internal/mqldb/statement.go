@@ -5,6 +5,8 @@ const (
 	SampleFieldType           = 2
 	ProcessAttributeFieldType = 3
 	SampleAttributeFieldType  = 4
+	ProcessFuncType           = 5
+	SampleFuncType            = 6
 )
 
 type Statement interface {
@@ -49,9 +51,12 @@ func hasProcessMatchStatement(statement Statement) bool {
 			return true
 		case ProcessAttributeFieldType:
 			return true
+		case ProcessFuncType:
+			return true
 		default:
 			return false
 		}
+
 	case AndStatement:
 		if hasProcessMatchStatement(s.Left) {
 			return true
@@ -60,6 +65,7 @@ func hasProcessMatchStatement(statement Statement) bool {
 			return true
 		}
 		return false
+
 	case OrStatement:
 		if hasProcessMatchStatement(s.Left) {
 			return true
@@ -81,9 +87,12 @@ func hasSampleMatchStatement(statement Statement) bool {
 			return true
 		case SampleAttributeFieldType:
 			return true
+		case SampleFuncType:
+			return true
 		default:
 			return false
 		}
+
 	case AndStatement:
 		if hasSampleMatchStatement(s.Left) {
 			return true
@@ -92,6 +101,7 @@ func hasSampleMatchStatement(statement Statement) bool {
 			return true
 		}
 		return false
+
 	case OrStatement:
 		if hasSampleMatchStatement(s.Left) {
 			return true
