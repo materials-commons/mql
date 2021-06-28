@@ -20,8 +20,8 @@ deploy-cli: cli
 	sudo chmod a+rx /usr/local/bin/mql
 
 deploy-server: server
-	# @sudo supervisorctl stop mcbridgefsd:mcbridgefsd_00
+	@sudo supervisorctl stop mqlservd:mqlservd_00
 	sudo cp cmd/mqlservd/mqlservd /usr/local/bin
 	sudo chmod a+rx /usr/local/bin/mqlservd
-	# sudo cp operations/supervisord.d/mcbridgefsd.ini /etc/supervisord.d
-	# @sudo supervisorctl start mcbridgefsd:mcbridgefsd_00
+	sudo cp operations/supervisord.d/mqlservd.ini /etc/supervisord.d
+	@sudo supervisorctl start mqlservd:mqlservd_00
