@@ -1,26 +1,70 @@
 package mqldb
 
-import "github.com/materials-commons/gomcdb/mcmodel"
+import (
+	"strconv"
+
+	"github.com/materials-commons/gomcdb/mcmodel"
+)
 
 func tryEvalAttributeIntMatch(val1 int64, match MatchStatement) bool {
-	val2, ok := match.Value.(int)
+	val2, ok := matchValToInt(match)
 	if !ok {
 		return false
 	}
-	return evalIntMatch(val1, int64(val2), match.Operation)
+	return evalIntMatch(val1, val2, match.Operation)
+}
+
+func matchValToInt(match MatchStatement) (int64, bool) {
+	switch match.Value.(type) {
+	case int64:
+		return match.Value.(int64), true
+	case int:
+		return int64(match.Value.(int)), true
+	case float64:
+		return int64(match.Value.(float64)), true
+	case float32:
+		return int64(match.Value.(float32)), true
+	case string:
+		val, err := strconv.ParseFloat(match.Value.(string), 64)
+		if err != nil {
+			return -1, false
+		}
+
+		return int64(val), true
+	default:
+		return -1, false
+	}
 }
 
 func tryEvalAttributeFloatMatch(val1 float64, match MatchStatement) bool {
-	val2, ok := match.Value.(float64)
+	val2, ok := matchValToFloat(match)
 	if !ok {
-		val2As32, ok := match.Value.(float32)
-		if !ok {
-			return false
-		}
-		return evalFloatMatch(val1, float64(val2As32), match.Operation)
+		return false
 	}
 
 	return evalFloatMatch(val1, val2, match.Operation)
+}
+
+func matchValToFloat(match MatchStatement) (float64, bool) {
+	switch match.Value.(type) {
+	case int64:
+		return float64(match.Value.(int64)), true
+	case int:
+		return float64(match.Value.(int)), true
+	case float64:
+		return match.Value.(float64), true
+	case float32:
+		return float64(match.Value.(float32)), true
+	case string:
+		val, err := strconv.ParseFloat(match.Value.(string), 64)
+		if err != nil {
+			return -1, false
+		}
+
+		return val, true
+	default:
+		return -1, false
+	}
 }
 
 func tryEvalAttributeStringMatch(val1 string, match MatchStatement) bool {
