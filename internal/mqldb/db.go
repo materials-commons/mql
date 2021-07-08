@@ -24,7 +24,7 @@ type DB struct {
 	// A sample can have multiple states, thus this maps a sample id to a list of states, then each
 	// state is a hash map of the attribute name to the attribute structure. For example, given a
 	// sample with ID 1, that has 2 states (with IDs of 4, and 5), where each state has two attributes,
-	// each name "AttrA" and "AttrB", then you would end up with SampleAttribytesBySampleIDAndStates
+	// named "AttrA" and "AttrB", then you would end up with SampleAttributesBySampleIDAndStates
 	// looking as follows:
 	// [1] <-- Sample id key into hash map (map[int]...)
 	//    [4] <-- First entity state id in entry for the first state (map[int]map[int]...)
@@ -85,9 +85,7 @@ func (db *DB) Load() error {
 		return err
 	}
 
-	if err := db.wireupAttributesToProcessesAndSamples(); err != nil {
-		return err
-	}
+	db.wireupAttributesToProcessesAndSamples()
 
 	return nil
 }
@@ -199,7 +197,7 @@ func (db *DB) loadProcessSampleMappings() error {
 	return nil
 }
 
-func (db *DB) wireupAttributesToProcessesAndSamples() error {
+func (db *DB) wireupAttributesToProcessesAndSamples() {
 	// Add the process attributes to each process
 	for i := range db.Processes {
 		for attrName := range db.ProcessAttributesByProcessID[db.Processes[i].ID] {
@@ -232,6 +230,4 @@ func (db *DB) wireupAttributesToProcessesAndSamples() error {
 			db.Samples[i].EntityStates = append(db.Samples[i].EntityStates, entityState)
 		}
 	}
-
-	return nil
 }
