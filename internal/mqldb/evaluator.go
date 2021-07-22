@@ -191,23 +191,11 @@ func eval(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement
 }
 
 func evalAndStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement AndStatement) bool {
-	//fmt.Printf("evalAndStatement: %+v\n", statement.Left)
 	if !eval(db, process, sampleState, statement.Left) {
 		return false
 	}
 
-	fmt.Println("   left returning true")
-	if sampleState != nil {
-		fmt.Printf("      for sample %s\n", sampleState.sample.Name)
-		fmt.Printf("            now evaluating right: %+v\n", statement.Right)
-	}
-
-	right := eval(db, process, sampleState, statement.Right)
-	fmt.Println("      Right returned", right)
-	if process == nil {
-		fmt.Println("              and Process for right is nil")
-	}
-	return right
+	return eval(db, process, sampleState, statement.Right)
 }
 
 func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement OrStatement) bool {
@@ -223,6 +211,9 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 	case ProcessFieldType:
 		return evalProcessFieldMatch(process, match)
 	case ProcessAttributeFieldType:
+		if sampleState != nil {
+			return evalProcessAttributeFieldMatchForSampleState(sampleState, db, match)
+		}
 		return evalProcessAttributeFieldMatch(process, db, match)
 	case SampleFieldType:
 		return evalSampleFieldMatch(sampleState, match)
@@ -268,6 +259,20 @@ func evalProcessFuncMatch(process *mcmodel.Activity, db *DB, match MatchStatemen
 	return false
 }
 
+func evalProcessAttributeFieldMatchForSampleState(sampleState *SampleState, db *DB, match MatchStatement) bool {
+	processes, ok := db.SampleProcesses[sampleState.sample.ID]
+	if !ok {
+		return false
+	}
+
+	for _, process := range processes {
+		if evalProcessAttributeFieldMatch(process, db, match) {
+			return true
+		}
+	}
+	return false
+}
+
 func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
 	if process == nil {
 		return false
@@ -284,7 +289,6 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 		return false
 	}
 
-	fmt.Printf("process has attribute we are looking for %+v\n", match)
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
@@ -305,13 +309,13 @@ func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match Match
 	}
 	states, ok := db.SampleAttributesBySampleIDAndStates[sampleState.sample.ID]
 	if !ok {
-		fmt.Printf("    Sample %d/%s has no states\n", sampleState.sample.ID, sampleState.sample.Name)
 		return false
 	}
 
 	attributes, ok := states[sampleState.EntityStateID]
 	if !ok {
 		fmt.Printf("     Sample %d/%s with state %d has no attributes\n", sampleState.sample.ID, sampleState.sample.Name, sampleState.EntityStateID)
+		return false
 	}
 
 	attribute, ok := attributes[match.FieldName]
@@ -319,7 +323,6 @@ func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match Match
 		return false
 	}
 
-	fmt.Printf("has attribute we are looking for %+v\n", match)
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
