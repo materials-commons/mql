@@ -35,15 +35,9 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "mqlservd",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+	Short: "MQL Query Execution Server",
+	Long: `The mqlservd server implements a REST API for the (M)aterials (Q)uery (L)anguage (MQL). It allows users
+to query their materials data and find matching samples and processes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		e := echo.New()
 		e.HideBanner = true
