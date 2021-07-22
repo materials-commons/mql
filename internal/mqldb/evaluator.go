@@ -6,6 +6,8 @@ import (
 	"github.com/materials-commons/gomcdb/mcmodel"
 )
 
+// EvalStatement runs a query and returns the results. At the moment selection is a simple boolean flag
+// on whether to return samples and/or processes from the matches.
 func EvalStatement(db *DB, selection Selection, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
 	var (
 		matchingProcesses []mcmodel.Activity
@@ -23,12 +25,17 @@ func EvalStatement(db *DB, selection Selection, statement Statement) ([]mcmodel.
 	return matchingProcesses, matchingSamples
 }
 
+// evalSelectProcessesAndSamples runs the match against both processes and samples.
 func evalSelectProcessesAndSamples(db *DB, statement Statement) ([]mcmodel.Activity, []mcmodel.Entity) {
 	processes := evalSelectProcesses(db, statement)
 	samples := evalSelectSamples(db, statement)
 	return processes, samples
 }
 
+// evalSelectSamples will only return matching samples. This method checks if there are sample or process
+// matching statements, and runs matches against samples and/or processes. If there is a process run it
+// then takes the results from the processes and filters it down to just the unique samples associated
+// the process.
 func evalSelectSamples(db *DB, statement Statement) []mcmodel.Entity {
 	var matchingSamples []mcmodel.Entity
 	var matchingProcesses []mcmodel.Activity
@@ -66,6 +73,8 @@ func evalSelectSamples(db *DB, statement Statement) []mcmodel.Entity {
 	return samplesToReturn
 }
 
+// uniqueSamplesForProcesses takes a list of matching processes, finds all the samples that those
+// processes refer to, and then filters out all duplicates.
 func uniqueSamplesForProcesses(db *DB, processes []mcmodel.Activity) []mcmodel.Entity {
 	var samples []mcmodel.Entity
 	uniqueSamples := make(map[int]*mcmodel.Entity)
@@ -82,6 +91,10 @@ func uniqueSamplesForProcesses(db *DB, processes []mcmodel.Activity) []mcmodel.E
 	return samples
 }
 
+// evalSelectProcesses will only return matching processes. This method checks if there are sample or process
+// matching statements, and runs matches against samples and/or processes. If there is a sample run it
+// then takes the results from the sample and filters it down to just the unique processes associated with the
+// samples.
 func evalSelectProcesses(db *DB, statement Statement) []mcmodel.Activity {
 	var matchingProcesses []mcmodel.Activity
 	var matchingSamples []mcmodel.Entity
@@ -119,6 +132,8 @@ func evalSelectProcesses(db *DB, statement Statement) []mcmodel.Activity {
 	return processesToReturn
 }
 
+// uniqueProcessesForSamples takes a list of matching samples, finds all the processes that those
+// samples are associated with, and then filters out all duplicates.
 func uniqueProcessesForSamples(db *DB, samples []mcmodel.Entity) []mcmodel.Activity {
 	var processes []mcmodel.Activity
 	uniqueProcesses := make(map[int]*mcmodel.Activity)
@@ -135,6 +150,7 @@ func uniqueProcessesForSamples(db *DB, samples []mcmodel.Entity) []mcmodel.Activ
 	return processes
 }
 
+// evalMatchingProcesses finds all the matching processes with a statement
 func evalMatchingProcesses(db *DB, statement Statement) []mcmodel.Activity {
 	var matchingProcesses []mcmodel.Activity
 	uniqueProcessMatches := make(map[int]mcmodel.Activity)
@@ -151,11 +167,16 @@ func evalMatchingProcesses(db *DB, statement Statement) []mcmodel.Activity {
 	return matchingProcesses
 }
 
+// SampleState is the state associated with a sample. The IDs contained in the structures
+// are used to look up items in the hash tables in the DB.
 type SampleState struct {
 	sample        *mcmodel.Entity
 	EntityStateID int
 }
 
+// evalMatchingSamples finds all the matching samples for a statement. This method must iterate through
+// the states associated with a sample. Once it finds a match in a sample state it will stop searching
+// and ignore the other sample states.
 func evalMatchingSamples(db *DB, statement Statement) []mcmodel.Entity {
 	var matchingSamples []mcmodel.Entity
 	uniqueSampleMatches := make(map[int]mcmodel.Entity)
@@ -177,6 +198,8 @@ func evalMatchingSamples(db *DB, statement Statement) []mcmodel.Entity {
 	return matchingSamples
 }
 
+// eval is the heart of the statement evaluation. It handles individual matches as well as complex
+// statements.
 func eval(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement Statement) bool {
 	switch s := statement.(type) {
 	case MatchStatement:
@@ -190,6 +213,8 @@ func eval(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement
 	}
 }
 
+// evalAndStatement evaluates an AndStatement. It short circuits its check by returning false if the left side
+// evaluates to false.
 func evalAndStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement AndStatement) bool {
 	if !eval(db, process, sampleState, statement.Left) {
 		return false
@@ -198,6 +223,8 @@ func evalAndStatement(db *DB, process *mcmodel.Activity, sampleState *SampleStat
 	return eval(db, process, sampleState, statement.Right)
 }
 
+// evalOrStatement evaluates an OrStatement. It short circuits its check by returning if the left evaluates
+// to true.
 func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, statement OrStatement) bool {
 	if eval(db, process, sampleState, statement.Left) {
 		return true
@@ -206,11 +233,17 @@ func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState
 	return eval(db, process, sampleState, statement.Right)
 }
 
+// evalMatchStatement evaluates a MatchStatment which is a leaf node matching against a specific type of item such
+// as a process or sample attribute, or similar.
 func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, match MatchStatement) bool {
 	switch match.FieldType {
 	case ProcessFieldType:
 		return evalProcessFieldMatch(process, match)
 	case ProcessAttributeFieldType:
+		// There are two contexts in which to evaluate a process attribute - A sample or a process context. When in
+		// the sample context we need to find the processes associated with a sample and then evaluate the attributes.
+		// The context is determined by checking if sampleState is nil. If sampleState is not nil, then we are in a
+		// sample context.
 		if sampleState != nil {
 			return evalProcessAttributeFieldMatchForSampleState(sampleState, db, match)
 		}
@@ -218,6 +251,10 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 	case SampleFieldType:
 		return evalSampleFieldMatch(sampleState, match)
 	case SampleAttributeFieldType:
+		// There are two contexts in which to evaluate a sample attribute - A sample or a process context. When in
+		// the process context we need to find the samples associated with the process and then evaluate the attributes.
+		// The context is determined by checking if process is nil. If process is not nil, then we are in a process
+		// context.
 		if process != nil {
 			return evalSampleAttributeFieldMatchForProcess(process, db, match)
 		}
@@ -231,17 +268,22 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 	return false
 }
 
+// evalSampleFuncMatch is called when the user as specified one of the built in sample matching functions. It determines
+// the function being called and performs the evaluation.
 func evalSampleFuncMatch(state *SampleState, db *DB, match MatchStatement) bool {
 	if state == nil {
 		return false
 	}
 	switch {
 	case match.Operation == "has-process":
+		// The only supported function is has-process, which determines if a sample is associated with the given
+		// process name.
 		return evalSampleFuncMatchHasProcess(state, db, match.Value.(string))
 	}
 	return false
 }
 
+// evalSampleFuncMatchHasProcess implements the has-process function for samples.
 func evalSampleFuncMatchHasProcess(state *SampleState, db *DB, processType string) bool {
 	processes, ok := db.SampleProcesses[state.sample.ID]
 	if !ok {
@@ -258,16 +300,25 @@ func evalSampleFuncMatchHasProcess(state *SampleState, db *DB, processType strin
 	return false
 }
 
+// evalProcessFuncMatch when a user has specified a process level built in function. This method is currently a
+// placeholder as no process level built in functions have been implemented yet.
 func evalProcessFuncMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
+	// No methods yet implemented, just return false
 	return false
 }
 
+// evalProcessAttributeFieldMatchForSampleState evaluates a process attribute match in the context of a sample. To do
+// this it uses the sample to look up all the processes associated with the sample and then evaluates them, stopping
+// if one of them evaluates to true.
 func evalProcessAttributeFieldMatchForSampleState(sampleState *SampleState, db *DB, match MatchStatement) bool {
+	// Get the processes associated with the sample
 	processes, ok := db.SampleProcesses[sampleState.sample.ID]
 	if !ok {
+		// No processes to evaluate!
 		return false
 	}
 
+	// Loop through the processes looking for a match on the specified attribute
 	for _, process := range processes {
 		if evalProcessAttributeFieldMatch(process, db, match) {
 			return true
@@ -276,22 +327,31 @@ func evalProcessAttributeFieldMatchForSampleState(sampleState *SampleState, db *
 	return false
 }
 
+// evalProcessAttributeFieldMatch evaluates the match statement against the given process. It checks the
+// process for the attribute in the match statement and if it exists evaluates the match statement against
+// that attribute.
 func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
 	if process == nil {
+		// There are contexts in which a null process may be passed in. When that happens just return false
+		// (no match)
 		return false
 	}
 
+	// Get the attributes for the process
 	attributes, ok := db.ProcessAttributesByProcessID[process.ID]
 	if !ok {
 		fmt.Printf("    Process %d/%s has no attributes\n", process.ID, process.Name)
 		return false
 	}
 
+	// Get the given attribute in the match for the process
 	attribute, ok := attributes[match.FieldName]
 	if !ok {
 		return false
 	}
 
+	// An attribute may have a list of values, so evaluate the match statement against each
+	// stopping if one matches.
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
@@ -306,12 +366,16 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 	return false
 }
 
+// evalSampleAttributeFieldMatchForProcess evaluates a sample field in a process context. It looks up the samples
+// for a given process and then runs an evaluation again each of them.
 func evalSampleAttributeFieldMatchForProcess(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
+	// Get the list of samples associated with the process
 	samples, ok := db.ProcessSamples[process.ID]
 	if !ok {
 		return false
 	}
 
+	// Loop through each sample and its various states checking for a match.
 	for _, sample := range samples {
 		for _, state := range sample.EntityStates {
 			sampleState := &SampleState{
@@ -327,26 +391,33 @@ func evalSampleAttributeFieldMatchForProcess(process *mcmodel.Activity, db *DB, 
 	return false
 }
 
+// evalSampleAttributeFieldMatch evaluates a attribute match against a sample in a specific sample state.
 func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match MatchStatement) bool {
+	// Sanity check, make sure sampleState isn't nil
 	if sampleState == nil {
 		return false
 	}
+
+	// Get all the states for the sample
 	states, ok := db.SampleAttributesBySampleIDAndStates[sampleState.sample.ID]
 	if !ok {
 		return false
 	}
 
+	// Get all the attributes associated with the specific sample and sample state
 	attributes, ok := states[sampleState.EntityStateID]
 	if !ok {
 		fmt.Printf("     Sample %d/%s with state %d has no attributes\n", sampleState.sample.ID, sampleState.sample.Name, sampleState.EntityStateID)
 		return false
 	}
 
+	// From that list of attributes, check if it contains the specific attribute
 	attribute, ok := attributes[match.FieldName]
 	if !ok {
 		return false
 	}
 
+	// Attributes can have multiple values, loop through each value, stopping if a match evaluates to true.
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
