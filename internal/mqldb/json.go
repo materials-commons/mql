@@ -1,5 +1,7 @@
 package mqldb
 
+// MapToStatement takes a map, which represents the converted JSON payload for a statement
+// and converts it to statement. It recursively calls itself to build out the full statement.
 func MapToStatement(m map[string]interface{}) Statement {
 	//fmt.Printf("MapToStatement = %+v\n", m)
 	_, hasAnd := m["and"]
