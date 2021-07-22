@@ -218,6 +218,9 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 	case SampleFieldType:
 		return evalSampleFieldMatch(sampleState, match)
 	case SampleAttributeFieldType:
+		if process != nil {
+			return evalSampleAttributeFieldMatchForProcess(process, db, match)
+		}
 		return evalSampleAttributeFieldMatch(sampleState, db, match)
 	case ProcessFuncType:
 		return evalProcessFuncMatch(process, db, match)
@@ -297,6 +300,27 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 			return tryEvalAttributeFloatMatch(value.ValueFloat, match)
 		case mcmodel.ValueTypeString:
 			return tryEvalAttributeStringMatch(value.ValueString, match)
+		}
+	}
+
+	return false
+}
+
+func evalSampleAttributeFieldMatchForProcess(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
+	samples, ok := db.ProcessSamples[process.ID]
+	if !ok {
+		return false
+	}
+
+	for _, sample := range samples {
+		for _, state := range sample.EntityStates {
+			sampleState := &SampleState{
+				sample:        sample,
+				EntityStateID: state.ID,
+			}
+			if evalSampleAttributeFieldMatch(sampleState, db, match) {
+				return true
+			}
 		}
 	}
 
