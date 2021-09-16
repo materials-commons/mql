@@ -274,16 +274,19 @@ func evalSampleFuncMatch(state *SampleState, db *DB, match MatchStatement) bool 
 	if state == nil {
 		return false
 	}
+
 	switch {
 	case match.Operation == "has-process":
-		// The only supported function is has-process, which determines if a sample is associated with the given
-		// process name.
+		// matching samples that are used in the given process
 		return evalSampleFuncMatchHasProcess(state, db, match.Value.(string))
+	case match.Operation == "has-attribute":
+		return evalSampleFuncMatchHasAttribute(state, db, match.Value.(string))
 	}
 	return false
 }
 
-// evalSampleFuncMatchHasProcess implements the has-process function for samples.
+// evalSampleFuncMatchHasProcess implements the has-process function for samples. The has-process function
+// for samples determines if a sample went through a particular process.
 func evalSampleFuncMatchHasProcess(state *SampleState, db *DB, processType string) bool {
 	processes, ok := db.SampleProcesses[state.sample.ID]
 	if !ok {
@@ -300,11 +303,77 @@ func evalSampleFuncMatchHasProcess(state *SampleState, db *DB, processType strin
 	return false
 }
 
-// evalProcessFuncMatch when a user has specified a process level built in function. This method is currently a
-// placeholder as no process level built in functions have been implemented yet.
+// evalSampleFuncMatchHasAttribute implements the has-attribute function for samples. The has-attribute function
+// for samples determines if a sample has a particular attribute in any of it's state.
+func evalSampleFuncMatchHasAttribute(sampleState *SampleState, db *DB, attributeName string) bool {
+	// Sanity check, make sure sampleState isn't nil
+	if sampleState == nil {
+		return false
+	}
+
+	// Get all the states for the sample
+	states, ok := db.SampleAttributesBySampleIDAndStates[sampleState.sample.ID]
+	if !ok {
+		return false
+	}
+
+	// Get all the attributes associated with the specific sample and sample state
+	attributes, ok := states[sampleState.EntityStateID]
+	if !ok {
+		fmt.Printf("     Sample %d/%s with state %d has no attributes\n", sampleState.sample.ID, sampleState.sample.Name, sampleState.EntityStateID)
+		return false
+	}
+
+	// From that list of attributes, check if it contains the specific attribute
+	_, ok = attributes[attributeName]
+	return ok
+}
+
+// evalProcessFuncMatch when a user has specified a process level built in function.
 func evalProcessFuncMatch(process *mcmodel.Activity, db *DB, match MatchStatement) bool {
-	// No methods yet implemented, just return false
+	if process == nil {
+		return false
+	}
+
+	switch {
+	case match.Operation == "has-sample":
+		// matching samples that are used in the given process
+		return evalProcessFuncMatchHasSample(process, db, match.Value.(string))
+	case match.Operation == "has-attribute":
+		return evalProcessFuncMatchHasAttribute(process, db, match.Value.(string))
+	}
 	return false
+}
+
+// evalProcessFuncMatchHasSample implements the has-sample process function. The has-sample process function
+// determines if a process has a given sample name.
+func evalProcessFuncMatchHasSample(process *mcmodel.Activity, db *DB, sampleName string) bool {
+	samples, ok := db.ProcessSamples[process.ID]
+	if !ok {
+		// Process has no samples
+		return false
+	}
+
+	for _, sample := range samples {
+		if sample.Name == sampleName {
+			return true
+		}
+	}
+
+	return false
+}
+
+// evalProcessFuncMatchHasAttribute implements the has-attribute process function. The has-attribute process
+// function determines if a process has a given process attribute.
+func evalProcessFuncMatchHasAttribute(process *mcmodel.Activity, db *DB, attributeName string) bool {
+	attributes, ok := db.ProcessAttributesByProcessID[process.ID]
+	if !ok {
+		// Process has no attributes
+		return false
+	}
+
+	_, ok = attributes[attributeName]
+	return ok
 }
 
 // evalProcessAttributeFieldMatchForSampleState evaluates a process attribute match in the context of a sample. To do
