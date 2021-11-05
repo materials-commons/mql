@@ -33,16 +33,6 @@ type OrStatement struct {
 func (s OrStatement) statementNode() {
 }
 
-type MatchStatement struct {
-	FieldType int         `json:"field_type"`
-	FieldName string      `json:"field_name"`
-	Operation string      `json:"operation"`
-	Value     interface{} `json:"value"`
-}
-
-func (s MatchStatement) statementNode() {
-}
-
 func hasProcessMatchStatement(statement Statement) bool {
 	switch s := statement.(type) {
 	case MatchStatement:

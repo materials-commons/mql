@@ -238,7 +238,7 @@ func evalOrStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState
 func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleState, match MatchStatement) bool {
 	switch match.FieldType {
 	case ProcessFieldType:
-		return evalProcessFieldMatch(process, match)
+		return match.evalProcessFieldMatch(process)
 	case ProcessAttributeFieldType:
 		// There are two contexts in which to evaluate a process attribute - A sample or a process context. When in
 		// the sample context we need to find the processes associated with a sample and then evaluate the attributes.
@@ -249,7 +249,7 @@ func evalMatchStatement(db *DB, process *mcmodel.Activity, sampleState *SampleSt
 		}
 		return evalProcessAttributeFieldMatch(process, db, match)
 	case SampleFieldType:
-		return evalSampleFieldMatch(sampleState, match)
+		return match.evalSampleFieldMatch(sampleState)
 	case SampleAttributeFieldType:
 		// There are two contexts in which to evaluate a sample attribute - A sample or a process context. When in
 		// the process context we need to find the samples associated with the process and then evaluate the attributes.
@@ -424,11 +424,11 @@ func evalProcessAttributeFieldMatch(process *mcmodel.Activity, db *DB, match Mat
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
-			return tryEvalAttributeIntMatch(value.ValueInt, match)
+			return match.tryEvalAttributeIntMatch(value.ValueInt)
 		case mcmodel.ValueTypeFloat:
-			return tryEvalAttributeFloatMatch(value.ValueFloat, match)
+			return match.tryEvalAttributeFloatMatch(value.ValueFloat)
 		case mcmodel.ValueTypeString:
-			return tryEvalAttributeStringMatch(value.ValueString, match)
+			return match.tryEvalAttributeStringMatch(value.ValueString)
 		}
 	}
 
@@ -490,11 +490,11 @@ func evalSampleAttributeFieldMatch(sampleState *SampleState, db *DB, match Match
 	for _, value := range attribute.AttributeValues {
 		switch value.ValueType {
 		case mcmodel.ValueTypeInt:
-			return tryEvalAttributeIntMatch(value.ValueInt, match)
+			return match.tryEvalAttributeIntMatch(value.ValueInt)
 		case mcmodel.ValueTypeFloat:
-			return tryEvalAttributeFloatMatch(value.ValueFloat, match)
+			return match.tryEvalAttributeFloatMatch(value.ValueFloat)
 		case mcmodel.ValueTypeString:
-			return tryEvalAttributeStringMatch(value.ValueString, match)
+			return match.tryEvalAttributeStringMatch(value.ValueString)
 		}
 	}
 
