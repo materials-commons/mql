@@ -62,8 +62,7 @@ func New(l *lexer.Lexer) *Parser {
 }
 
 func (p *Parser) appendError(msg string, args ...interface{}) {
-	fmt.Sprintf(msg, args...)
-	p.errors = append(p.errors, msg)
+	p.errors = append(p.errors, fmt.Sprintf(msg, args...))
 }
 
 func (p *Parser) registerPrefix(t token.TokenType, fn prefixParseFn) {
