@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/materials-commons/mql/internal/mql"
 	"github.com/materials-commons/mql/internal/mql/ast"
 	"github.com/materials-commons/mql/internal/mql/lexer"
 	"github.com/materials-commons/mql/internal/mql/token"
@@ -49,10 +50,22 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+
+	// Prefix
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.FLOAT, p.parseFloatLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.SAMPLES, p.parseSamplesLiteral)
+	p.registerPrefix(token.PROCESSES, p.parseProcessesLiteral)
+	p.registerPrefix(token.SAMPLE_HAS_ATTRIBUTE_FUNC, p.parseSampleHasAttributeFunc)
+	p.registerPrefix(token.SAMPLE_HAS_PROCESS_FUNC, p.parseSampleHasProcessFunc)
+	p.registerPrefix(token.PROCESS_HAS_ATTRIBUTE_FUNC, p.parseProcessHasAttributeFunc)
+	p.registerPrefix(token.PROCESS_HAS_SAMPLE_FUNC, p.parseProcessHasSampleFunc)
+
+	// Infix
+	p.registerInfix(token.AND, p.parseAndExpression)
+	p.registerInfix(token.OR, p.parseOrExpression)
 
 	// Read two tokens so that currentToken and peekToken are both set
 	p.nextToken()
@@ -61,13 +74,23 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
+func (p *Parser) ParseStatement() ast.Statement {
+	switch p.curToken.Type {
+	default:
+		return nil
+	}
+}
+
 func (p *Parser) appendError(msg string, args ...interface{}) {
-	fmt.Sprintf(msg, args...)
-	p.errors = append(p.errors, msg)
+	p.errors = append(p.errors, fmt.Sprintf(msg, args...))
 }
 
 func (p *Parser) registerPrefix(t token.TokenType, fn prefixParseFn) {
 	p.prefixParseFns[t] = fn
+}
+
+func (p *Parser) registerInfix(t token.TokenType, fn infixParseFn) {
+	p.infixParseFns[t] = fn
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
@@ -211,4 +234,41 @@ func (p *Parser) getPrecedence(t token.TokenType) int {
 func (p *Parser) peekError(t token.TokenType) {
 	p.errors = append(p.errors, fmt.Sprintf("Expect next token to be %s, got %s instead", token.TokenToStr(t),
 		token.TokenToStr(p.peekToken.Type)))
+}
+
+func (p *Parser) parseAndExpression(expression ast.Expression) ast.Expression {
+	s := mql.AndStatement{
+		Left:  nil,
+		Right: nil,
+	}
+	_ = s
+	return nil
+}
+
+func (p *Parser) parseSamplesLiteral() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseProcessesLiteral() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseSampleHasAttributeFunc() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseSampleHasProcessFunc() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseProcessHasAttributeFunc() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseProcessHasSampleFunc() ast.Expression {
+	return nil
+}
+
+func (p *Parser) parseOrExpression(expression ast.Expression) ast.Expression {
+	return nil
 }

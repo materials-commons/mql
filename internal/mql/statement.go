@@ -1,4 +1,4 @@
-package mqldb
+package mql
 
 const (
 	ProcessFieldType          = 1
@@ -43,7 +43,7 @@ type MatchStatement struct {
 func (s MatchStatement) statementNode() {
 }
 
-func hasProcessMatchStatement(statement Statement) bool {
+func HasProcessMatchStatement(statement Statement) bool {
 	switch s := statement.(type) {
 	case MatchStatement:
 		switch s.FieldType {
@@ -58,19 +58,19 @@ func hasProcessMatchStatement(statement Statement) bool {
 		}
 
 	case AndStatement:
-		if hasProcessMatchStatement(s.Left) {
+		if HasProcessMatchStatement(s.Left) {
 			return true
 		}
-		if hasProcessMatchStatement(s.Right) {
+		if HasProcessMatchStatement(s.Right) {
 			return true
 		}
 		return false
 
 	case OrStatement:
-		if hasProcessMatchStatement(s.Left) {
+		if HasProcessMatchStatement(s.Left) {
 			return true
 		}
-		if hasProcessMatchStatement(s.Right) {
+		if HasProcessMatchStatement(s.Right) {
 			return true
 		}
 		return false
@@ -79,7 +79,7 @@ func hasProcessMatchStatement(statement Statement) bool {
 	return false
 }
 
-func hasSampleMatchStatement(statement Statement) bool {
+func HasSampleMatchStatement(statement Statement) bool {
 	switch s := statement.(type) {
 	case MatchStatement:
 		switch s.FieldType {
@@ -94,19 +94,19 @@ func hasSampleMatchStatement(statement Statement) bool {
 		}
 
 	case AndStatement:
-		if hasSampleMatchStatement(s.Left) {
+		if HasSampleMatchStatement(s.Left) {
 			return true
 		}
-		if hasSampleMatchStatement(s.Right) {
+		if HasSampleMatchStatement(s.Right) {
 			return true
 		}
 		return false
 
 	case OrStatement:
-		if hasSampleMatchStatement(s.Left) {
+		if HasSampleMatchStatement(s.Left) {
 			return true
 		}
-		if hasSampleMatchStatement(s.Right) {
+		if HasSampleMatchStatement(s.Right) {
 			return true
 		}
 		return false
