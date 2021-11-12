@@ -9,6 +9,12 @@ const (
 	SampleFuncType            = 6
 )
 
+type Selection struct {
+	SelectProcesses bool
+	SelectSamples   bool
+	Statement       Statement
+}
+
 type Statement interface {
 	statementNode()
 }

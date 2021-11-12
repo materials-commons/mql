@@ -50,6 +50,7 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 
 	// Prefix
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
@@ -74,10 +75,79 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
-func (p *Parser) ParseStatement() ast.Statement {
+func (p *Parser) ParseMQL() *ast.MQL {
+	mqlProgram := &ast.MQL{}
+	mqlProgram.Statements = []ast.Statement{}
+	for p.curToken.Type != token.EOF {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			mqlProgram.Statements = append(mqlProgram.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return mqlProgram
+}
+
+func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
+	case token.SELECT:
+		return p.parseSelectStatement()
+	//case token.SEMICOLON:
+	//	return
 	default:
+		// error here for now
+		log.Fatalf("Top level statement can only be a select")
 		return nil
+	}
+}
+
+func (p *Parser) parseSelectStatement() ast.Statement {
+	statement := &ast.SelectStatement{Token: p.curToken, SelectionStatements: []ast.Statement{}}
+	if !p.peekTokenIs(token.SAMPLES) && !p.peekTokenIs(token.PROCESSES) {
+		return nil
+	}
+	p.nextToken()
+	statement.SelectionStatements = p.parseSelectionStatement()
+	if p.peekTokenIs(token.WHERE) {
+		statement.WhereStatement = p.parseWhereStatement()
+	}
+
+	return statement
+}
+
+func (p *Parser) parseSelectionStatement() []ast.Statement {
+	var selectionStatements []ast.Statement
+	for {
+		switch {
+		case p.curTokenIs(token.SAMPLES):
+			// do something
+			selectionStatements = append(selectionStatements, &ast.SamplesSelectionStatement{Token: p.curToken})
+		case p.curTokenIs(token.PROCESSES):
+			// do something
+			selectionStatements = append(selectionStatements, &ast.ProcessesSelectionStatement{Token: p.curToken})
+		case p.curTokenIs(token.COMMA):
+			// skip over to next token
+		default:
+			// Hmmmm.... should we have advanced here or not?
+			return selectionStatements
+		}
+		p.nextToken()
+	}
+}
+
+func (p *Parser) parseWhereStatement() *ast.WhereStatement {
+	// move past where
+	p.nextToken()
+
+	whereStatement := &ast.WhereStatement{Statements: []ast.Statement{}}
+	// Loop over token until EOF
+	for {
+		switch {
+		case p.curTokenIs(token.EOF):
+			return whereStatement
+			//case p.curTokenIs(token.Sa)
+		}
 	}
 }
 
@@ -158,48 +228,21 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) ParseMQL() *ast.MQL {
-	mql := &ast.MQL{}
-	mql.Statements = []ast.Statement{}
-	for !p.curTokenIs(token.EOF) {
-		statement := p.parseStatement()
-		if statement != nil {
-			mql.Statements = append(mql.Statements, statement)
-		}
-		p.nextToken()
-	}
-	return mql
-}
+//func (p *Parser) ParseMQL() *ast.MQL {
+//	mql := &ast.MQL{}
+//	mql.Statements = []ast.Statement{}
+//	for !p.curTokenIs(token.EOF) {
+//		statement := p.parseStatement()
+//		if statement != nil {
+//			mql.Statements = append(mql.Statements, statement)
+//		}
+//		p.nextToken()
+//	}
+//	return mql
+//}
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
-}
-
-func (p *Parser) parseStatement() ast.Statement {
-	switch p.curToken.Type {
-	case token.SELECT:
-		return p.parseSelectStatement()
-	//case token.SEMICOLON:
-	//	return
-	default:
-		// error here for now
-		log.Fatalf("Top level statement can only be a select")
-		return nil
-	}
-}
-
-func (p *Parser) parseSelectStatement() ast.Statement {
-	statement := &ast.SelectStatement{Token: p.curToken, SelectionStatements: []ast.Statement{}}
-	p.nextToken()
-	statement.SelectionStatements = p.parseSelectionStatements()
-	if !p.expectPeek(token.WHERE) {
-		return statement
-	}
-	return nil
-}
-
-func (p *Parser) parseSelectionStatements() []ast.Statement {
-	return nil
 }
 
 func (p *Parser) expectPeek(t token.TokenType) bool {

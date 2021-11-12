@@ -50,7 +50,7 @@ func (m *MQL) String() string {
 type SelectStatement struct {
 	Token               token.Token
 	SelectionStatements []Statement
-	WhereStatement      WhereStatement
+	WhereStatement      *WhereStatement
 }
 
 func (s *SelectStatement) statementNode() {
@@ -63,13 +63,46 @@ func (s *SelectStatement) TokenLiteral() string {
 func (s *SelectStatement) String() string {
 	var out bytes.Buffer
 
+	out.WriteString(" select ")
 	for _, st := range s.SelectionStatements {
 		out.WriteString(st.String())
 	}
 
-	out.WriteString(s.WhereStatement.String())
+	if s.WhereStatement != nil {
+		out.WriteString(s.WhereStatement.String())
+	}
 
 	return out.String()
+}
+
+type SamplesSelectionStatement struct {
+	Token token.Token
+}
+
+func (s *SamplesSelectionStatement) statementNode() {
+}
+
+func (s *SamplesSelectionStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *SamplesSelectionStatement) String() string {
+	return " samples "
+}
+
+type ProcessesSelectionStatement struct {
+	Token token.Token
+}
+
+func (s *ProcessesSelectionStatement) statementNode() {
+}
+
+func (s *ProcessesSelectionStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *ProcessesSelectionStatement) String() string {
+	return " processes "
 }
 
 /////////////////////////////////////////
@@ -89,6 +122,7 @@ func (s *WhereStatement) TokenLiteral() string {
 func (s *WhereStatement) String() string {
 	var out bytes.Buffer
 
+	out.WriteString(" where ")
 	for _, st := range s.Statements {
 		out.WriteString(st.String())
 	}

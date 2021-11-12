@@ -36,14 +36,16 @@ const (
 	PROCESS_HAS_ATTRIBUTE_FUNC = 0x403 // p-has-attribute:
 
 	// keywords
-	SAMPLE    = 0x700 // s:
-	PROCESS   = 0x701 // p:
-	ATTR      = 0x702 // a:
-	SELECT    = 0x703 // select
-	WHERE     = 0x704 // where
-	NULL      = 0x705 // null
-	SAMPLES   = 0x706 // samples
-	PROCESSES = 0x707 // processes
+	SAMPLE       = 0x700 // s:
+	PROCESS      = 0x701 // p:
+	ATTR         = 0x702 // a:
+	SELECT       = 0x703 // select
+	WHERE        = 0x704 // where
+	NULL         = 0x705 // null
+	SAMPLES      = 0x706 // samples
+	PROCESSES    = 0x707 // processes
+	PROCESS_ATTR = 0x708 // pa:
+	SAMPLE_ATTR  = 0x709 // sa:
 
 	// Elements
 	LBRACKET  = 0x800 // [
