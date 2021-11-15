@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/materials-commons/mql/internal/mql/token"
 )
@@ -132,6 +133,24 @@ func (s *WhereStatement) String() string {
 
 /////////////////////////////////////////
 
+type SampleAttributeIdentifier struct {
+	Token token.Token
+	Value string
+}
+
+func (i *SampleAttributeIdentifier) expressionNode() {
+}
+
+func (i *SampleAttributeIdentifier) TokenLiteral() string {
+	return i.Token.Literal
+}
+
+func (i *SampleAttributeIdentifier) String() string {
+	return i.Value
+}
+
+/////////////////////////////////////////
+
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64
@@ -183,6 +202,28 @@ func (l *StringLiteral) String() string {
 }
 
 /////////////////////////////////////////
+
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+func (e *ExpressionStatement) statementNode() {
+}
+
+func (e *ExpressionStatement) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *ExpressionStatement) String() string {
+	if e.Expression != nil {
+		return e.Expression.String()
+	}
+
+	return fmt.Sprintf(" expression %s ", e.Token.Literal)
+}
+
+////////////////////////////////////////
 
 type PrefixExpression struct {
 	Token    token.Token

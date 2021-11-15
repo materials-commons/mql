@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/materials-commons/mql/internal/mql"
@@ -63,6 +62,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.SAMPLE_HAS_PROCESS_FUNC, p.parseSampleHasProcessFunc)
 	p.registerPrefix(token.PROCESS_HAS_ATTRIBUTE_FUNC, p.parseProcessHasAttributeFunc)
 	p.registerPrefix(token.PROCESS_HAS_SAMPLE_FUNC, p.parseProcessHasSampleFunc)
+	p.registerPrefix(token.SAMPLE_ATTR, p.parseSampleAttrFunc)
 
 	// Infix
 	p.registerInfix(token.AND, p.parseAndExpression)
@@ -81,6 +81,7 @@ func (p *Parser) ParseMQL() *ast.MQL {
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
+			fmt.Println("  adding statement")
 			mqlProgram.Statements = append(mqlProgram.Statements, stmt)
 		}
 		p.nextToken()
@@ -96,9 +97,11 @@ func (p *Parser) parseStatement() ast.Statement {
 	//case token.SEMICOLON:
 	//	return
 	default:
+		// Allow expression parsing, at least for now
+		return p.parseExpressionStatement()
 		// error here for now
-		log.Fatalf("Top level statement can only be a select")
-		return nil
+		//log.Fatalf("Top level statement can only be a select")
+		//return nil
 	}
 }
 
@@ -109,7 +112,7 @@ func (p *Parser) parseSelectStatement() ast.Statement {
 	}
 	p.nextToken()
 	statement.SelectionStatements = p.parseSelectionStatement()
-	if p.peekTokenIs(token.WHERE) {
+	if p.curTokenIs(token.WHERE) {
 		statement.WhereStatement = p.parseWhereStatement()
 	}
 
@@ -121,15 +124,12 @@ func (p *Parser) parseSelectionStatement() []ast.Statement {
 	for {
 		switch {
 		case p.curTokenIs(token.SAMPLES):
-			// do something
 			selectionStatements = append(selectionStatements, &ast.SamplesSelectionStatement{Token: p.curToken})
 		case p.curTokenIs(token.PROCESSES):
-			// do something
 			selectionStatements = append(selectionStatements, &ast.ProcessesSelectionStatement{Token: p.curToken})
 		case p.curTokenIs(token.COMMA):
 			// skip over to next token
 		default:
-			// Hmmmm.... should we have advanced here or not?
 			return selectionStatements
 		}
 		p.nextToken()
@@ -137,18 +137,59 @@ func (p *Parser) parseSelectionStatement() []ast.Statement {
 }
 
 func (p *Parser) parseWhereStatement() *ast.WhereStatement {
+	whereStatement := &ast.WhereStatement{Statements: []ast.Statement{}}
+
 	// move past where
 	p.nextToken()
 
-	whereStatement := &ast.WhereStatement{Statements: []ast.Statement{}}
-	// Loop over token until EOF
-	for {
-		switch {
-		case p.curTokenIs(token.EOF):
-			return whereStatement
-			//case p.curTokenIs(token.Sa)
-		}
+	for !p.curTokenIs(token.SEMICOLON) {
+		// TODO: Skip parsing expressions until we encounter a semicolon
+		p.nextToken()
 	}
+
+	return whereStatement
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	fmt.Println("parseExpressionStatement")
+	statement := &ast.ExpressionStatement{Token: p.curToken}
+	statement.Expression = p.parseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return statement
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	fmt.Printf("parseExpression p.curToken.Type = %d/%s\n", p.curToken.Type, p.curToken.Literal)
+	prefixFn := p.prefixParseFns[p.curToken.Type]
+	if prefixFn == nil {
+		fmt.Printf("No function found for %d/%s\n", p.curToken.Type, p.curToken.Literal)
+		p.appendError("no prefix parse function for %s found", token.TokenToStr(p.curToken.Type))
+		return nil
+	}
+
+	leftExp := prefixFn()
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infixFn := p.infixParseFns[p.peekToken.Type]
+		if infixFn == nil {
+			return leftExp
+		}
+
+		p.nextToken()
+		leftExp = infixFn(leftExp)
+	}
+
+	return leftExp
+}
+
+func (p *Parser) parseSampleAttrFunc() ast.Expression {
+	fmt.Println("parseSampleAttrFunc p.peekToken = ", p.peekToken.Literal)
+	p.nextToken()
+
+	return &ast.SampleAttributeIdentifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) appendError(msg string, args ...interface{}) {
@@ -199,28 +240,6 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	}
 
 	return exp
-}
-
-func (p *Parser) parseExpression(precedence int) ast.Expression {
-	prefixFn := p.prefixParseFns[p.curToken.Type]
-	if prefixFn == nil {
-		p.appendError("no prefix parse function for %s found", token.TokenToStr(p.curToken.Type))
-		return nil
-	}
-
-	leftExp := prefixFn()
-
-	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
-		infixFn := p.infixParseFns[p.peekToken.Type]
-		if infixFn == nil {
-			return leftExp
-		}
-
-		p.nextToken()
-		leftExp = infixFn(leftExp)
-	}
-
-	return leftExp
 }
 
 func (p *Parser) nextToken() {
