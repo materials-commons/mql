@@ -16,6 +16,11 @@ const (
 	LOWEST
 	EQUALS      // =
 	LESSGREATER // > or < or <= or >=
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X
+	CALL        // func(x)
+	INDEX       // array[index]
 	BOOLEAN
 )
 
@@ -63,6 +68,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.PROCESS_HAS_ATTRIBUTE_FUNC, p.parseProcessHasAttributeFunc)
 	p.registerPrefix(token.PROCESS_HAS_SAMPLE_FUNC, p.parseProcessHasSampleFunc)
 	p.registerPrefix(token.SAMPLE_ATTR, p.parseSampleAttrFunc)
+	p.registerPrefix(token.PROCESS_ATTR, p.parseProcessAttrFunc)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
 	// Infix
 	p.registerInfix(token.AND, p.parseAndExpression)
@@ -81,7 +89,6 @@ func (p *Parser) ParseMQL() *ast.MQL {
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
-			fmt.Println("  adding statement")
 			mqlProgram.Statements = append(mqlProgram.Statements, stmt)
 		}
 		p.nextToken()
@@ -151,7 +158,6 @@ func (p *Parser) parseWhereStatement() *ast.WhereStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-	fmt.Println("parseExpressionStatement")
 	statement := &ast.ExpressionStatement{Token: p.curToken}
 	statement.Expression = p.parseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -186,10 +192,13 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 }
 
 func (p *Parser) parseSampleAttrFunc() ast.Expression {
-	fmt.Println("parseSampleAttrFunc p.peekToken = ", p.peekToken.Literal)
 	p.nextToken()
-
 	return &ast.SampleAttributeIdentifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseProcessAttrFunc() ast.Expression {
+	p.nextToken()
+	return &ast.ProcessAttributeIdentifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) appendError(msg string, args ...interface{}) {
@@ -228,6 +237,15 @@ func (p *Parser) parseFloatLiteral() ast.Expression {
 
 func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
+
+	p.nextToken()
+	expression.Right = p.parseExpression(PREFIX)
+
+	return expression
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {

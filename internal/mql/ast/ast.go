@@ -151,6 +151,24 @@ func (i *SampleAttributeIdentifier) String() string {
 
 /////////////////////////////////////////
 
+type ProcessAttributeIdentifier struct {
+	Token token.Token
+	Value string
+}
+
+func (i *ProcessAttributeIdentifier) expressionNode() {
+}
+
+func (i *ProcessAttributeIdentifier) TokenLiteral() string {
+	return i.Token.Literal
+}
+
+func (i *ProcessAttributeIdentifier) String() string {
+	return i.Value
+}
+
+/////////////////////////////////////////
+
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64

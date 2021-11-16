@@ -56,6 +56,8 @@ const (
 	QUOTE     = 0x805 // "
 	COLON     = 0x806 // :
 	SEMICOLON = 0x807 // ;
+	MINUS     = 0x808 // -
+	BANG      = 0x809 // !
 )
 
 type Token struct {
@@ -64,15 +66,20 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"select":          SELECT,
-	"where":           WHERE,
-	"a:":              ATTR,
-	"p:":              PROCESS,
-	"s:":              SAMPLE,
-	"sa:":             SAMPLE_ATTR,
-	"sample-attr:":    SAMPLE_ATTR,
-	"pa:":             PROCESS_ATTR,
-	"process-attr:":   PROCESS_ATTR,
+	"select": SELECT,
+	"where":  WHERE,
+	"a:":     ATTR,
+
+	"s:":           SAMPLE_ATTR,
+	"sa:":          SAMPLE_ATTR,
+	"sample-attr:": SAMPLE_ATTR,
+	"sample:":      SAMPLE_ATTR,
+
+	"pa:":           PROCESS_ATTR,
+	"process-attr:": PROCESS_ATTR,
+	"process:":      PROCESS_ATTR,
+	"p:":            PROCESS_ATTR,
+
 	"samples":         SAMPLES,
 	"processes":       PROCESSES,
 	"and":             AND,
