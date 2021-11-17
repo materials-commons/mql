@@ -9,12 +9,10 @@ const (
 	ILLEGAL           = -1
 
 	// Identifiers and Literals
-	IDENT        = 0x100
-	INT          = 0x101
-	FLOAT        = 0x102
-	STRING       = 0x103
-	BOOL         = 0x104
-	QUOTED_IDENT = 0x105
+	IDENT  = 0x100
+	INT    = 0x101
+	FLOAT  = 0x102
+	STRING = 0x103
 
 	// Operators
 	EQUAL = 0x200 // =
@@ -46,6 +44,8 @@ const (
 	PROCESSES    = 0x707 // processes
 	PROCESS_ATTR = 0x708 // pa:
 	SAMPLE_ATTR  = 0x709 // sa:
+	TRUE         = 0x710 // true
+	FALSE        = 0x711 // false
 
 	// Elements
 	LBRACKET  = 0x800 // [
@@ -58,6 +58,7 @@ const (
 	SEMICOLON = 0x807 // ;
 	MINUS     = 0x808 // -
 	BANG      = 0x809 // !
+	PLUS      = 0x810 // +
 )
 
 type Token struct {
@@ -68,7 +69,6 @@ type Token struct {
 var keywords = map[string]TokenType{
 	"select": SELECT,
 	"where":  WHERE,
-	"a:":     ATTR,
 
 	"s:":           SAMPLE_ATTR,
 	"sa:":          SAMPLE_ATTR,
@@ -80,16 +80,20 @@ var keywords = map[string]TokenType{
 	"process:":      PROCESS_ATTR,
 	"p:":            PROCESS_ATTR,
 
-	"samples":         SAMPLES,
-	"processes":       PROCESSES,
-	"and":             AND,
-	"or":              OR,
-	"not":             NOT,
-	"null":            NULL,
+	"samples":   SAMPLES,
+	"processes": PROCESSES,
+	"and":       AND,
+	"or":        OR,
+	"not":       NOT,
+	"null":      NULL,
+
 	"s-has-process:":  SAMPLE_HAS_PROCESS_FUNC,
 	"s-has-attribute": SAMPLE_HAS_ATTRIBUTE_FUNC,
 	"p-has-sample":    PROCESS_HAS_SAMPLE_FUNC,
 	"p-has-attribute": PROCESS_HAS_ATTRIBUTE_FUNC,
+
+	"true":  TRUE,
+	"false": FALSE,
 }
 
 func LookupIdent(ident string) TokenType {

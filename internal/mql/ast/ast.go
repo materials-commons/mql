@@ -221,6 +221,24 @@ func (l *StringLiteral) String() string {
 
 /////////////////////////////////////////
 
+type BooleanLiteral struct {
+	Token token.Token
+	Value bool
+}
+
+func (l *BooleanLiteral) expressionNode() {
+}
+
+func (l *BooleanLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *BooleanLiteral) String() string {
+	return l.Token.Literal
+}
+
+/////////////////////////////////////////
+
 type ExpressionStatement struct {
 	Token      token.Token
 	Expression Expression

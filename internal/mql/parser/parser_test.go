@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/materials-commons/mql/internal/mql/ast"
@@ -206,6 +207,25 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}
 }
 
+func TestBooleanLiteralExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+
+	for _, test := range tests {
+		mql := parseForTest(t, test.input, 1)
+		statement := checkForExpressionStatement(t, mql.Statements[0])
+		b := checkForBooleanLiteral(t, statement.Expression)
+		if b.Value != test.expected {
+			t.Fatalf("Expected boolean literal %s to be %t, got %t", b.TokenLiteral(), test.expected, b.Value)
+		}
+	}
+}
+
 func TestParsingPrefixExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -222,7 +242,36 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		if prefixExpression.Operator != test.operator {
 			t.Fatalf("expected prefixExpression.Operator '%s', got '%s'", test.operator, prefixExpression.Operator)
 		}
+		testLiteralExpression(t, prefixExpression.Right, test.value)
 	}
+}
+
+func TestParsingInfixExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		left     interface{}
+		operator string
+		right    interface{}
+	}{
+		{"true = true;", true, "=", true},
+		{"5+5;", 5, "+", 5},
+	}
+
+	for _, test := range tests {
+		mql := parseForTest(t, test.input, 1)
+		expression := checkForExpressionStatement(t, mql.Statements[0])
+		testInfixExpression(t, expression.Expression, test.left, test.operator, test.right)
+	}
+}
+
+func testInfixExpression(t *testing.T, e ast.Expression, left interface{}, operator string, right interface{}) {
+	operatorExpression := checkForInfixExpression(t, e)
+
+	testLiteralExpression(t, operatorExpression.Left, left)
+	if operatorExpression.Operator != operator {
+		t.Fatalf("Expected operator %s, got %s", operator, operatorExpression.Operator)
+	}
+	testLiteralExpression(t, operatorExpression.Right, right)
 }
 
 func checkForExpressionStatement(t *testing.T, statement ast.Statement) *ast.ExpressionStatement {
@@ -234,13 +283,65 @@ func checkForExpressionStatement(t *testing.T, statement ast.Statement) *ast.Exp
 	return s
 }
 
+func checkForBooleanLiteral(t *testing.T, e ast.Expression) *ast.BooleanLiteral {
+	b, ok := e.(*ast.BooleanLiteral)
+	checkOk(t, "*ast.BooleanLiteral", b, ok)
+	return b
+}
+
 func checkForPrefixExpression(t *testing.T, expression ast.Expression) *ast.PrefixExpression {
 	e, ok := expression.(*ast.PrefixExpression)
+	checkOk(t, "*ast.ExpressionStatement", e, ok)
+	return e
+}
+
+func checkForInfixExpression(t *testing.T, expression ast.Expression) *ast.InfixExpression {
+	e, ok := expression.(*ast.InfixExpression)
+	checkOk(t, "*ast.InfixExpression", expression, ok)
+	return e
+}
+
+func checkOk(t *testing.T, expectedType string, item interface{}, ok bool) {
 	if !ok {
-		t.Fatalf("statement not *ast.ExpressionStatement, got=%T", e)
+		t.Fatalf("statement not %s, got %T", expectedType, item)
+	}
+}
+
+//func checkForIdentifier(t *testing.T, expression ast.Expression) *ast.Identifier {
+//	i, ok := expression.(*ast.Identifier)
+//	if
+//}
+
+func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) {
+	switch v := expected.(type) {
+	case int:
+		testIntegerLiteral(t, expression, int64(v))
+	}
+}
+
+func testIntegerLiteral(t *testing.T, expression ast.Expression, value int64) {
+	i, ok := expression.(*ast.IntegerLiteral)
+	checkOk(t, "*ast.IntegerLiteral", expression, ok)
+
+	if i.Value != value {
+		t.Fatalf("Expected value %d, got %d", value, i.Value)
 	}
 
-	return e
+	if i.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Fatalf("Expected literal %s, got %s", fmt.Sprintf("%d", value), i.TokenLiteral())
+	}
+}
+
+func testFloatLiteral(t *testing.T, expression ast.Expression, value float64) {
+
+}
+
+func testStringLiteral(t *testing.T, expression ast.Expression, value string) {
+
+}
+
+func testBooleanLiteral(t *testing.T, expression ast.Expression, value bool) {
+
 }
 
 func parseForTest(t *testing.T, input string, length int) *ast.MQL {

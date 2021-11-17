@@ -34,6 +34,8 @@ var precendences = map[token.TokenType]int{
 	token.AND:   BOOLEAN,
 	token.NOT:   BOOLEAN,
 	token.OR:    BOOLEAN,
+	token.PLUS:  SUM,
+	token.MINUS: SUM,
 }
 
 type (
@@ -60,6 +62,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.FLOAT, p.parseFloatLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.TRUE, p.parseBoolLiteral)
+	p.registerPrefix(token.FALSE, p.parseBoolLiteral)
+
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.SAMPLES, p.parseSamplesLiteral)
 	p.registerPrefix(token.PROCESSES, p.parseProcessesLiteral)
@@ -73,8 +78,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
 	// Infix
-	p.registerInfix(token.AND, p.parseAndExpression)
-	p.registerInfix(token.OR, p.parseOrExpression)
+	p.registerInfix(token.EQUAL, p.parseInfixExpression)
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.AND, p.parseInfixExpression)
+	p.registerInfix(token.OR, p.parseInfixExpression)
 
 	// Read two tokens so that currentToken and peekToken are both set
 	p.nextToken()
@@ -106,9 +113,6 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		// Allow expression parsing, at least for now
 		return p.parseExpressionStatement()
-		// error here for now
-		//log.Fatalf("Top level statement can only be a select")
-		//return nil
 	}
 }
 
@@ -239,12 +243,24 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
+func (p *Parser) parseBoolLiteral() ast.Expression {
+	return &ast.BooleanLiteral{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
 
 	p.nextToken()
 	expression.Right = p.parseExpression(PREFIX)
 
+	return expression
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{Token: p.curToken, Operator: p.curToken.Literal, Left: left}
+	precedence := p.curPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
 	return expression
 }
 
