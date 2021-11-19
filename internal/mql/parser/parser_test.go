@@ -277,7 +277,30 @@ func testInfixExpression(t *testing.T, e ast.Expression, left interface{}, opera
 func TestComplexQueryExpression(t *testing.T) {
 	input := `select samples where (sample:hardness = 5 and (sample:'max size' > 5 or sample:color = "blue"));`
 	mql := parseForTest(t, input, 1)
-	fmt.Printf("+%v\n", mql)
+	fmt.Println(mql)
+	//ss := mql.Statements[0].(*ast.SelectStatement)
+	//fmt.Printf("type = %T\n", ss.WhereStatement.Expression)
+	//ie := ss.WhereStatement.Expression.(*ast.InfixExpression)
+	//fmt.Printf("type left = %T\n", ie.Left)
+	//fmt.Printf("operator = %s\n", ie.Operator)
+	//fmt.Printf("type right = %T\n", ie.Right)
+	//ie2 := ie.Right.(*ast.InfixExpression)
+	//fmt.Printf("ie2 type left = %T\n", ie2.Left)
+	//fmt.Printf("ie operator = %s\n", ie2.Operator)
+	//fmt.Printf("ie2.Right type = %T\n", ie2.Right)
+	//ie2Right := ie2.Right.(*ast.InfixExpression)
+	//fmt.Printf("ie2Right.Left = %T\n", ie2Right.Left)
+	//fmt.Printf("ie2Right.Operator = %s\n", ie2Right.Operator)
+	//fmt.Printf("ie2Right.Right = %T\n", ie2Right.Right)
+	//ie2RightLeft := ie2Right.Left.(*ast.InfixExpression)
+	//fmt.Printf("ie2RightLeft.Left = %T\n", ie2RightLeft.Left)
+	//fmt.Printf("ie2RightLeft.Operator = %s\n", ie2RightLeft.Operator)
+	//fmt.Printf("ie2RightLeft.Right = %T\n", ie2RightLeft.Right)
+
+	input = `select samples where sample:hardness = 5 and sample:color = 8`
+	//input = `select samples where sample:hardness = 5+5`
+	mql = parseForTest(t, input, 1)
+	fmt.Println(mql)
 }
 
 func checkForExpressionStatement(t *testing.T, statement ast.Statement) *ast.ExpressionStatement {

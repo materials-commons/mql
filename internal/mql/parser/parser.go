@@ -15,13 +15,14 @@ const (
 	_ int = iota
 	LOWEST
 	EQUALS      // =
+	LOGICAL     // and, or, not
 	LESSGREATER // > or < or <= or >=
 	SUM         // +
 	PRODUCT     // *
 	PREFIX      // -X
 	CALL        // func(x)
 	INDEX       // array[index]
-	BOOLEAN
+
 )
 
 var precendences = map[token.TokenType]int{
@@ -31,9 +32,9 @@ var precendences = map[token.TokenType]int{
 	token.LTEQ:  LESSGREATER,
 	token.GT:    LESSGREATER,
 	token.GTEQ:  LESSGREATER,
-	token.AND:   BOOLEAN,
-	token.NOT:   BOOLEAN,
-	token.OR:    BOOLEAN,
+	token.AND:   LOGICAL,
+	token.NOT:   LOGICAL,
+	token.OR:    LOGICAL,
 	token.PLUS:  SUM,
 	token.MINUS: SUM,
 }
@@ -182,7 +183,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	fmt.Printf("parseExpression p.curToken.Type = %d/%s\n", p.curToken.Type, p.curToken.Literal)
+	//fmt.Printf("parseExpression p.curToken.Type = %d/%s\n", p.curToken.Type, p.curToken.Literal)
 	prefixFn := p.prefixParseFns[p.curToken.Type]
 	if prefixFn == nil {
 		fmt.Printf("No function found for %d/%s\n", p.curToken.Type, p.curToken.Literal)
@@ -275,7 +276,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
-	fmt.Printf("parseGroupedExpression called")
+	//fmt.Printf("parseGroupedExpression called\n")
 	p.nextToken()
 
 	exp := p.parseExpression(LOWEST)

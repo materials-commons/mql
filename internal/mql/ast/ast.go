@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/materials-commons/mql/internal/mql/token"
 )
@@ -144,7 +145,10 @@ func (i *SampleAttributeIdentifier) TokenLiteral() string {
 }
 
 func (i *SampleAttributeIdentifier) String() string {
-	return i.Value
+	if strings.Contains(i.Token.Literal, " ") {
+		return fmt.Sprintf("sample:'%s'", i.Value)
+	}
+	return fmt.Sprintf("sample:%s", i.Value)
 }
 
 /////////////////////////////////////////
