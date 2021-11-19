@@ -82,6 +82,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.AND, p.parseInfixExpression)
 	p.registerInfix(token.OR, p.parseInfixExpression)
+	p.registerInfix(token.LT, p.parseInfixExpression)
+	p.registerInfix(token.LTEQ, p.parseInfixExpression)
+	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.GTEQ, p.parseInfixExpression)
 
 	// Read two tokens so that currentToken and peekToken are both set
 	p.nextToken()
@@ -148,15 +152,21 @@ func (p *Parser) parseSelectionStatement() []ast.Statement {
 }
 
 func (p *Parser) parseWhereStatement() *ast.WhereStatement {
-	whereStatement := &ast.WhereStatement{Statements: []ast.Statement{}}
+	whereStatement := &ast.WhereStatement{Token: p.curToken}
 
 	// move past where
 	p.nextToken()
 
-	for !p.curTokenIs(token.SEMICOLON) {
-		// TODO: Skip parsing expressions until we encounter a semicolon
+	whereStatement.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+
+	//for !p.curTokenIs(token.SEMICOLON) || !p.curTokenIs(token.EOF){
+	//	// TODO: Skip parsing expressions until we encounter a semicolon
+	//	p.nextToken()
+	//}
 
 	return whereStatement
 }
@@ -265,6 +275,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
+	fmt.Printf("parseGroupedExpression called")
 	p.nextToken()
 
 	exp := p.parseExpression(LOWEST)

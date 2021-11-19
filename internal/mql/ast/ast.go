@@ -110,7 +110,7 @@ func (s *ProcessesSelectionStatement) String() string {
 
 type WhereStatement struct {
 	Token      token.Token
-	Statements []Statement
+	Expression Expression
 }
 
 func (s *WhereStatement) statementNode() {
@@ -124,9 +124,7 @@ func (s *WhereStatement) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(" where ")
-	for _, st := range s.Statements {
-		out.WriteString(st.String())
-	}
+	out.WriteString(s.Expression.String())
 
 	return out.String()
 }

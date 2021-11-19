@@ -274,6 +274,12 @@ func testInfixExpression(t *testing.T, e ast.Expression, left interface{}, opera
 	testLiteralExpression(t, operatorExpression.Right, right)
 }
 
+func TestComplexQueryExpression(t *testing.T) {
+	input := `select samples where (sample:hardness = 5 and (sample:'max size' > 5 or sample:color = "blue"));`
+	mql := parseForTest(t, input, 1)
+	fmt.Printf("+%v\n", mql)
+}
+
 func checkForExpressionStatement(t *testing.T, statement ast.Statement) *ast.ExpressionStatement {
 	s, ok := statement.(*ast.ExpressionStatement)
 	if !ok {
