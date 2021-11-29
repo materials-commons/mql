@@ -207,13 +207,23 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 }
 
 func (p *Parser) parseSampleAttrFunc() ast.Expression {
-	p.nextToken()
-	return &ast.SampleAttributeIdentifier{Token: p.curToken, Value: p.curToken.Literal}
+	attribute, operator, value := p.parseAttribute()
+	return &ast.SampleAttributeIdentifier{Token: p.curToken, Attribute: attribute, Operator: operator, Value: value}
 }
 
 func (p *Parser) parseProcessAttrFunc() ast.Expression {
+	attribute, operator, value := p.parseAttribute()
+	return &ast.ProcessAttributeIdentifier{Token: p.curToken, Attribute: attribute, Operator: operator, Value: value}
+}
+
+func (p *Parser) parseAttribute() (string, string, string) {
 	p.nextToken()
-	return &ast.ProcessAttributeIdentifier{Token: p.curToken, Value: p.curToken.Literal}
+	attribute := p.curToken.Literal
+	p.nextToken()
+	operator := p.curToken.Literal
+	p.nextToken()
+	value := p.curToken.Literal
+	return attribute, operator, value
 }
 
 func (p *Parser) appendError(msg string, args ...interface{}) {

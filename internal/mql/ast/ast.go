@@ -133,8 +133,10 @@ func (s *WhereStatement) String() string {
 /////////////////////////////////////////
 
 type SampleAttributeIdentifier struct {
-	Token token.Token
-	Value string
+	Token     token.Token
+	Attribute string
+	Operator  string
+	Value     string
 }
 
 func (i *SampleAttributeIdentifier) expressionNode() {
@@ -146,16 +148,18 @@ func (i *SampleAttributeIdentifier) TokenLiteral() string {
 
 func (i *SampleAttributeIdentifier) String() string {
 	if strings.Contains(i.Token.Literal, " ") {
-		return fmt.Sprintf("sample:'%s'", i.Value)
+		return fmt.Sprintf("sample:'%s' %s %s", i.Attribute, i.Operator, i.Value)
 	}
-	return fmt.Sprintf("sample:%s", i.Value)
+	return fmt.Sprintf("sample:%s %s %s", i.Attribute, i.Operator, i.Value)
 }
 
 /////////////////////////////////////////
 
 type ProcessAttributeIdentifier struct {
-	Token token.Token
-	Value string
+	Token     token.Token
+	Attribute string
+	Operator  string
+	Value     string
 }
 
 func (i *ProcessAttributeIdentifier) expressionNode() {
@@ -166,7 +170,10 @@ func (i *ProcessAttributeIdentifier) TokenLiteral() string {
 }
 
 func (i *ProcessAttributeIdentifier) String() string {
-	return i.Value
+	if strings.Contains(i.Token.Literal, " ") {
+		return fmt.Sprintf("process:'%s' %s %s", i.Attribute, i.Operator, i.Value)
+	}
+	return fmt.Sprintf("process:%s %s %s", i.Attribute, i.Operator, i.Value)
 }
 
 /////////////////////////////////////////
