@@ -9,6 +9,7 @@ import (
 )
 
 var ErrNoSelectionStatement = errors.New("no selection statement")
+var ErrInvalidWhereStatement = errors.New("invalid where statement")
 
 func AST2Selection(query *ast.MQL) (*mql.Selection, error) {
 	var selection mql.Selection
