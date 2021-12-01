@@ -6,6 +6,7 @@ import (
 
 	"github.com/materials-commons/mql/internal/mql/ast"
 	"github.com/materials-commons/mql/internal/mql/lexer"
+	"github.com/materials-commons/mql/internal/mqldb"
 )
 
 func TestSimpleSelectStatement(t *testing.T) {
@@ -282,6 +283,16 @@ func TestComplexQueryExpression(t *testing.T) {
 	input := `select samples where (sample:hardness = 5 and (sample:'max size' > 5 or process:color = "blue"));`
 	mql := parseForTest(t, input, 1)
 	fmt.Println(mql)
+	s, _ := mqldb.AST2Selection(mql)
+	fmt.Printf("%+v\n", s)
+}
+
+func TestSimpleQueryExpression(t *testing.T) {
+	input := `select samples where sample:hardness = 5`
+	mql := parseForTest(t, input, 1)
+	fmt.Println(mql)
+	s, _ := mqldb.AST2Selection(mql)
+	fmt.Printf("%+v\n", s)
 }
 
 func checkForExpressionStatement(t *testing.T, statement ast.Statement) *ast.ExpressionStatement {
