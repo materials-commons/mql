@@ -164,11 +164,6 @@ func (p *Parser) parseWhereStatement() *ast.WhereStatement {
 		p.nextToken()
 	}
 
-	//for !p.curTokenIs(token.SEMICOLON) || !p.curTokenIs(token.EOF){
-	//	// TODO: Skip parsing expressions until we encounter a semicolon
-	//	p.nextToken()
-	//}
-
 	return whereStatement
 }
 
@@ -303,19 +298,6 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-//func (p *Parser) ParseMQL() *ast.MQL {
-//	mql := &ast.MQL{}
-//	mql.Statements = []ast.Statement{}
-//	for !p.curTokenIs(token.EOF) {
-//		statement := p.parseStatement()
-//		if statement != nil {
-//			mql.Statements = append(mql.Statements, statement)
-//		}
-//		p.nextToken()
-//	}
-//	return mql
-//}
-
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
@@ -384,9 +366,5 @@ func (p *Parser) parseProcessHasAttributeFunc() ast.Expression {
 }
 
 func (p *Parser) parseProcessHasSampleFunc() ast.Expression {
-	return nil
-}
-
-func (p *Parser) parseOrExpression(expression ast.Expression) ast.Expression {
 	return nil
 }

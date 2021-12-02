@@ -27,13 +27,13 @@ const (
 	OR  = 0x301 // or
 	NOT = 0x302 // not
 
-	// build-in functions
+	// built-in functions
 	SAMPLE_HAS_PROCESS_FUNC    = 0x400 // s-has-process:
 	SAMPLE_HAS_ATTRIBUTE_FUNC  = 0x401 // s-has-attribute:
 	PROCESS_HAS_SAMPLE_FUNC    = 0x402 // p-has-sample:
 	PROCESS_HAS_ATTRIBUTE_FUNC = 0x403 // p-has-attribute:
 
-	// keywords
+	// Keywords
 	SAMPLE       = 0x700 // s:
 	PROCESS      = 0x701 // p:
 	ATTR         = 0x702 // a:
